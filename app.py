@@ -7,6 +7,9 @@ import uuid
 app = Flask(__name__)
 app.secret_key = "secret123"
 
+# ===== DEBUG MODE ON =====
+app.config["PROPAGATE_EXCEPTIONS"] = True
+
 # ================= CLOUDINARY =================
 cloudinary.config(
     cloud_name="dpfswecue",
@@ -14,7 +17,7 @@ cloudinary.config(
     api_secret="BFp92tezRMgWq5tkb3inueu49FI"
 )
 
-# ================= MONGODB =================
+# ================= MONGO =================
 client = MongoClient("mongodb+srv://tahmid16122009_db_user:xha1hQWvPVgPfNAc@cluster0.uxtdbbt.mongodb.net/?retryWrites=true&w=majority")
 db = client["shop"]
 products_col = db["products"]
@@ -25,52 +28,39 @@ ADMIN_PASSWORD = "xha1hQWvPVgPfNAc"
 # ================= HOME =================
 @app.route('/')
 def home():
-    return """
-    <h1 style='text-align:center;'>🛍️ Shoes Shop Pro</h1>
-    <div style='text-align:center;'>
-        <a href='/products'>Products</a> |
-        <a href='/admin'>Admin</a>
-    </div>
-    """
+    return "<h2>Server Running OK</h2><a href='/products'>Products</a>"
 
 # ================= PRODUCTS =================
 @app.route('/products')
 def products():
     try:
         items = list(products_col.find())
-
-        html = "<h2 style='text-align:center;'>🔥 Products</h2>"
-        html += "<div style='display:flex;flex-wrap:wrap;justify-content:center;'>"
+        html = "<h2>Products</h2>"
 
         for p in items:
             html += f"""
-            <div style='border:1px solid #ccc;margin:10px;padding:10px;width:200px;text-align:center;'>
-                <img src="{p.get('media','')}" width="150"><br>
-                <h3>{p.get('name','')}</h3>
-                <p>৳ {p.get('price','')}</p>
-                <p>{p.get('color','')} | {p.get('size','')}</p>
-
-                <a href='/buy/{p.get('id','')}'>Order</a><br><br>
-                <a href='/delete/{p.get('id','')}' style='color:red;'>Delete</a>
+            <div>
+                <img src="{p.get('media','')}" width="100"><br>
+                {p.get('name','')} - {p.get('price','')}
+                <br>
+                <a href='/buy/{p.get('id','')}'>Buy</a>
+                <hr>
             </div>
             """
 
-        return html + "</div>"
+        return html
 
     except Exception as e:
-        return f"Error: {str(e)}"
+        return f"PRODUCT ERROR: {str(e)}"
 
 # ================= BUY =================
 @app.route('/buy/<id>')
 def buy(id):
     return f"""
-    <h2 style='text-align:center;'>Order Product</h2>
-
-    <form action='/order/{id}' method='POST' style='text-align:center;'>
-        <input name='name' placeholder='Name'><br><br>
-        <input name='phone' placeholder='Phone'><br><br>
-        <input name='address' placeholder='Address'><br><br>
-        <button>Order</button>
+    <form action='/order/{id}' method='POST'>
+    <input name='name'>
+    <input name='phone'>
+    <button>Order</button>
     </form>
     """
 
@@ -83,61 +73,51 @@ def order(id):
         orders_col.insert_one({
             "product": product,
             "name": request.form.get('name'),
-            "phone": request.form.get('phone'),
-            "address": request.form.get('address')
+            "phone": request.form.get('phone')
         })
 
-        return "<h2 style='color:green;text-align:center;'>Order Placed ✅</h2>"
+        return "Order Done"
 
     except Exception as e:
-        return str(e)
+        return f"ORDER ERROR: {str(e)}"
 
 # ================= ADMIN =================
 @app.route('/admin')
 def admin():
     return """
-    <h2 style='text-align:center;'>Admin Login</h2>
-
-    <form action='/dashboard' method='POST' style='text-align:center;'>
-        <input type='password' name='pass'><br><br>
-        <button>Login</button>
+    <form action='/dashboard' method='POST'>
+    <input type='password' name='pass'>
+    <button>Login</button>
     </form>
     """
 
 # ================= DASHBOARD =================
 @app.route('/dashboard', methods=['POST'])
 def dashboard():
-    if request.form.get('pass') != ADMIN_PASSWORD:
-        return "Wrong Password"
+    try:
+        if request.form.get('pass') != ADMIN_PASSWORD:
+            return "Wrong Password"
 
-    session['admin'] = True
+        session['admin'] = True
 
-    orders = list(orders_col.find())
+        return """
+        <h2>Admin</h2>
 
-    return """
-    <h2 style='text-align:center;'>📦 Admin Panel</h2>
+        <form action='/add' method='POST' enctype='multipart/form-data'>
+        <input name='name'>
+        <input name='price'>
+        <input type='file' name='media'>
+        <button>Add</button>
+        </form>
+        """
 
-    <form action='/add' method='POST' enctype='multipart/form-data' style='text-align:center;'>
-        <input name='name' placeholder='Name'><br><br>
-        <input name='price' placeholder='Price'><br><br>
-        <input type='file' name='media'><br><br>
-        <input name='color' placeholder='Color'><br><br>
-        <input name='size' placeholder='Size'><br><br>
-        <button>Add Product</button>
-    </form>
-
-    <hr>
-
-    <h3>Orders</h3>
-    """ + str(orders)
+    except Exception as e:
+        return f"DASHBOARD ERROR: {str(e)}"
 
 # ================= ADD =================
 @app.route('/add', methods=['POST'])
 def add():
     try:
-        if not session.get('admin'):
-            return "Not allowed"
-
         file = request.files.get('media')
 
         upload = cloudinary.uploader.upload(file, resource_type="auto")
@@ -146,29 +126,14 @@ def add():
             "id": str(uuid.uuid4()),
             "name": request.form.get('name'),
             "price": request.form.get('price'),
-            "media": upload.get('secure_url'),
-            "color": request.form.get('color'),
-            "size": request.form.get('size')
+            "media": upload.get('secure_url')
         })
 
         return redirect('/products')
 
     except Exception as e:
-        return str(e)
-
-# ================= DELETE =================
-@app.route('/delete/<id>')
-def delete(id):
-    try:
-        if not session.get('admin'):
-            return "Not allowed"
-
-        products_col.delete_one({"id": id})
-        return redirect('/products')
-
-    except Exception as e:
-        return str(e)
+        return f"ADD ERROR: {str(e)}"
 
 # ================= RUN =================
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run()
