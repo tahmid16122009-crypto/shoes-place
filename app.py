@@ -1,4 +1,5 @@
 from flask import Flask, request, redirect, session
+from pymongo import MongoClient
 import cloudinary
 import cloudinary.uploader
 import uuid
@@ -13,11 +14,13 @@ cloudinary.config(
     api_secret="BFp92tezRMgWq5tkb3inueu49FI"
 )
 
-# ================= DATABASE (memory) =================
-products = []
-orders = []
+# ================= MONGO DB =================
+client = MongoClient("mongodb+srv://tahmid16122009_db_user:xha1hQWvPVgPfNAc@cluster0.uxtdbbt.mongodb.net/?appName=Cluster0")
 
-# 🔥 ADMIN PASSWORD (SET BY YOU)
+db = client["shop"]
+products_col = db["products"]
+orders_col = db["orders"]
+
 ADMIN_PASSWORD = "xha1hQWvPVgPfNAc"
 
 # ================= HOME =================
@@ -33,54 +36,53 @@ def home():
 
 # ================= PRODUCTS =================
 @app.route('/products')
-def products_page():
+def products():
+
+    items = list(products_col.find())
 
     html = "<h2 style='text-align:center;'>🔥 Products</h2><div style='display:flex;flex-wrap:wrap;justify-content:center;'>"
 
-    for i, p in enumerate(products):
+    for i, p in enumerate(items):
         html += f"""
         <div style='border:1px solid #ccc;margin:10px;padding:10px;width:200px;text-align:center;'>
             <img src="{p['media']}" width="150"><br>
             <h3>{p['name']}</h3>
             <p>৳ {p['price']}</p>
             <p>{p['color']} | {p['size']}</p>
-
-            <a href='/buy/{i}'>Order</a><br><br>
-
-            <a href='/delete/{i}' style='color:red;'>Delete</a>
-            <a href='/edit/{i}'>Edit</a>
+            <a href='/buy/{p['id']}'>Order</a>
+            <br><br>
+            <a href='/delete/{p['id']}' style='color:red;'>Delete</a>
         </div>
         """
 
     return html + "</div>"
 
 # ================= BUY =================
-@app.route('/buy/<int:id>')
+@app.route('/buy/<id>')
 def buy(id):
 
-    p = products[id]
-
     return f"""
-    <h2 style='text-align:center;'>Order {p['name']}</h2>
+    <h2 style='text-align:center;'>Place Order</h2>
 
     <form action='/order/{id}' method='POST' style='text-align:center;'>
         <input name='name' placeholder='Name'><br><br>
         <input name='phone' placeholder='Phone'><br><br>
         <input name='address' placeholder='Address'><br><br>
-        <button>Place Order</button>
+        <button>Order</button>
     </form>
     """
 
 # ================= ORDER =================
-@app.route('/order/<int:id>', methods=['POST'])
+@app.route('/order/<id>', methods=['POST'])
 def order(id):
 
-    p = products[id]
+    product = products_col.find_one({"id": id})
 
-    orders.append({
-        "product": p['name'],
-        "name": request.form['name'],
-        "phone": request.form['phone']
+    orders_col.insert_one({
+        "product": product,
+        "customer": request.form['name'],
+        "phone": request.form['phone'],
+        "address": request.form['address']
     })
 
     return "<h2 style='text-align:center;color:green;'>Order Placed ✅</h2>"
@@ -92,7 +94,7 @@ def admin():
     <h2 style='text-align:center;'>Admin Login</h2>
 
     <form action='/dashboard' method='POST' style='text-align:center;'>
-        <input type='password' name='pass' placeholder='Password'><br><br>
+        <input type='password' name='pass'><br><br>
         <button>Login</button>
     </form>
     """
@@ -106,19 +108,17 @@ def dashboard():
 
     session['admin'] = True
 
+    orders = list(orders_col.find())
+
     return """
     <h2 style='text-align:center;'>📦 Admin Panel</h2>
 
     <form action='/add' method='POST' enctype='multipart/form-data' style='text-align:center;'>
-
-        <input name='name' placeholder='Product Name'><br><br>
+        <input name='name' placeholder='Name'><br><br>
         <input name='price' placeholder='Price'><br><br>
-
         <input type='file' name='media'><br><br>
-
         <input name='color' placeholder='Color'><br><br>
         <input name='size' placeholder='Size'><br><br>
-
         <button>Add Product</button>
     </form>
 
@@ -138,7 +138,7 @@ def add():
 
     upload = cloudinary.uploader.upload(file, resource_type="auto")
 
-    products.append({
+    products_col.insert_one({
         "id": str(uuid.uuid4()),
         "name": request.form['name'],
         "price": request.form['price'],
@@ -150,43 +150,13 @@ def add():
     return redirect('/products')
 
 # ================= DELETE =================
-@app.route('/delete/<int:id>')
+@app.route('/delete/<id>')
 def delete(id):
 
     if not session.get('admin'):
         return "Not allowed"
 
-    products.pop(id)
-    return redirect('/products')
-
-# ================= EDIT =================
-@app.route('/edit/<int:id>')
-def edit(id):
-
-    p = products[id]
-
-    return f"""
-    <h2 style='text-align:center;'>Edit Product</h2>
-
-    <form action='/update/{id}' method='POST' style='text-align:center;'>
-
-        <input name='name' value='{p['name']}'><br><br>
-        <input name='price' value='{p['price']}'><br><br>
-        <input name='color' value='{p['color']}'><br><br>
-        <input name='size' value='{p['size']}'><br><br>
-
-        <button>Update</button>
-    </form>
-    """
-
-# ================= UPDATE =================
-@app.route('/update/<int:id>', methods=['POST'])
-def update(id):
-
-    products[id]['name'] = request.form['name']
-    products[id]['price'] = request.form['price']
-    products[id]['color'] = request.form['color']
-    products[id]['size'] = request.form['size']
+    products_col.delete_one({"id": id})
 
     return redirect('/products')
 
