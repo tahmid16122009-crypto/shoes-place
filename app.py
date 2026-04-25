@@ -5,84 +5,123 @@ app = Flask(__name__)
 cart = []
 orders = []
 
-# HOME / LOGIN
+# PRODUCTS DATABASE (NEW + OLD)
+products = [
+    {
+        "id": "nike_air",
+        "name": "Nike Air Max",
+        "price": 3200,
+        "img": "https://via.placeholder.com/300",
+        "colors": ["Black", "White"],
+        "sizes": ["40", "41", "42", "43"]
+    },
+    {
+        "id": "adidas_run",
+        "name": "Adidas Running",
+        "price": 2700,
+        "img": "https://via.placeholder.com/300",
+        "colors": ["Red", "Blue"],
+        "sizes": ["40", "41", "42"]
+    },
+    {
+        "id": "puma_sport",
+        "name": "Puma Sport",
+        "price": 2500,
+        "img": "https://via.placeholder.com/300",
+        "colors": ["Black", "Green"],
+        "sizes": ["39", "40", "41", "42"]
+    },
+    {
+        "id": "new_balance",
+        "name": "New Balance",
+        "price": 2900,
+        "img": "https://via.placeholder.com/300",
+        "colors": ["Grey", "White"],
+        "sizes": ["40", "41", "42", "43"]
+    }
+]
+
+# HOME
 @app.route('/')
 def home():
     return """
-    <h2 style='text-align:center;'>👟 Shoes Place</h2>
-
+    <h1 style='text-align:center;'>👟 Shoes Place</h1>
     <div style='text-align:center;'>
-    <a href='/products'>🛍️ Products</a> |
-    <a href='/cart'>🧾 Cart</a>
+        <a href='/products'>Products</a> |
+        <a href='/cart'>Cart</a> |
+        <a href='/admin'>Admin</a>
     </div>
-
-    <form action='/products' style='text-align:center;margin-top:20px;'>
-    <input name='name' placeholder='Enter Name'><br><br>
-    <button>Enter Shop</button>
-    </form>
     """
 
 # PRODUCTS
 @app.route('/products')
-def products():
-    return """
-    <h2 style='text-align:center;'>🔥 Products</h2>
+def products_page():
+    html = "<h2 style='text-align:center;'>🔥 All Shoes</h2>"
+    html += "<div style='display:flex;flex-wrap:wrap;justify-content:center;gap:20px;'>"
 
-    <div style='text-align:center;'>
+    for p in products:
+        html += f"""
+        <div style='border:1px solid #ccc;padding:10px;width:220px;text-align:center;'>
+            <img src="{p['img']}" width="200"><br>
+            <h3>{p['name']}</h3>
+            <p>{p['price']}৳</p>
 
-    <div style='border:1px solid gray;margin:10px;padding:10px'>
-    <img src="https://i.ibb.co/your-image.jpg" width="200"><br>
-    <h3>Nike Air</h3>
-    <p>3000৳</p>
+            <a href='/add/{p['id']}' style='background:green;color:white;padding:5px;display:block;margin:5px;'>Add to Cart</a>
 
-    <a href='/order?product=Nike Air'>📦 Order Now</a><br>
-    <a href='/add/Nike Air'>🛒 Add to Cart</a>
-    </div>
+            <a href='/order_form/{p['id']}' style='background:orange;color:white;padding:5px;display:block;'>Order Now</a>
+        </div>
+        """
 
-    <div style='border:1px solid gray;margin:10px;padding:10px'>
-    <img src="https://i.ibb.co/your-image2.jpg" width="200"><br>
-    <h3>Adidas Run</h3>
-    <p>2500৳</p>
-
-    <a href='/order?product=Adidas Run'>📦 Order Now</a><br>
-    <a href='/add/Adidas Run'>🛒 Add to Cart</a>
-    </div>
-
-    </div>
-    """
+    html += "</div>"
+    return html
 
 # ADD CART
-@app.route('/add/<item>')
-def add(item):
-    cart.append(item)
+@app.route('/add/<pid>')
+def add(pid):
+    cart.append(pid)
     return redirect('/products')
 
 # CART
 @app.route('/cart')
 def cart_page():
-    return f"""
-    <h2 style='text-align:center;'>🧾 Cart</h2>
-    <p style='text-align:center;'>{cart}</p>
-    """
+    items = [p for p in products if p['id'] in cart]
+
+    html = "<h2 style='text-align:center;'>🛒 Cart</h2>"
+
+    for i in items:
+        html += f"<p style='text-align:center;'>{i['name']} - {i['price']}৳</p>"
+
+    return html
 
 # ORDER FORM
-@app.route('/order')
-def order():
-    product = request.args.get('product')
+@app.route('/order_form/<pid>')
+def order_form(pid):
+    product = next((p for p in products if p['id'] == pid), None)
+
+    if not product:
+        return "Product not found"
 
     return f"""
-    <h2 style='text-align:center;'>📦 Order Form</h2>
+    <h2 style='text-align:center;'>📦 Order Now</h2>
 
     <form action='/submit_order' method='POST' style='text-align:center;'>
 
-    <input name='name' placeholder='Name'><br><br>
-    <input name='phone' placeholder='Phone'><br><br>
-    <input name='address' placeholder='Address'><br><br>
+    <input name='name' placeholder='Your Name' required><br><br>
+    <input name='phone' placeholder='Phone' required><br><br>
+    <input name='address' placeholder='Address' required><br><br>
 
-    <input name='product' value='{product}'><br><br>
+    <input name='product' value='{product['name']}' readonly><br><br>
 
-    <input name='color' placeholder='Color'><br><br>
-    <input name='size' placeholder='Size'><br><br>
+    <select name='color'>
+        <option>{product['colors'][0]}</option>
+        <option>{product['colors'][1]}</option>
+    </select><br><br>
+
+    <select name='size'>
+        <option>{product['sizes'][0]}</option>
+        <option>{product['sizes'][1]}</option>
+    </select><br><br>
+
     <input name='qty' placeholder='Quantity'><br><br>
 
     <button>Place Order</button>
@@ -90,7 +129,7 @@ def order():
     </form>
     """
 
-# SAVE ORDER
+# SUBMIT ORDER
 @app.route('/submit_order', methods=['POST'])
 def submit_order():
 
@@ -106,29 +145,24 @@ def submit_order():
 
     orders.append(data)
 
-    return """
-    <h2 style='text-align:center;color:green;'>Order Placed ✅</h2>
-    <a href='/'>Home</a>
-    """
+    print("NEW ORDER:", data)
+
+    return "<h2 style='text-align:center;color:green;'>Order Placed ✅</h2><a href='/'>Home</a>"
 
 # ADMIN PANEL
 @app.route('/admin')
 def admin():
-
     html = "<h2 style='text-align:center;'>🧾 Orders</h2>"
 
     for o in orders:
         html += f"""
         <div style='border:1px solid gray;margin:10px;padding:10px'>
-        Name: {o['name']}<br>
-        Phone: {o['phone']}<br>
-        Product: {o['product']}<br>
-        Color: {o['color']}<br>
-        Size: {o['size']}<br>
-        Qty: {o['qty']}<br>
+        <b>{o['product']}</b><br>
+        {o['name']} | {o['phone']}<br>
+        {o['color']} | {o['size']} | Qty: {o['qty']}
         </div>
         """
 
     return html
 
-app.run(host='0.0.0.0', port=10000)
+app.run(host='0.0.0.0', port=5000)
