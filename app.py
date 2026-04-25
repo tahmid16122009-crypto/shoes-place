@@ -14,9 +14,8 @@ cloudinary.config(
     api_secret="BFp92tezRMgWq5tkb3inueu49FI"
 )
 
-# ================= MONGO DB =================
-client = MongoClient("mongodb+srv://tahmid16122009_db_user:xha1hQWvPVgPfNAc@cluster0.uxtdbbt.mongodb.net/?appName=Cluster0")
-
+# ================= MONGODB =================
+client = MongoClient("mongodb+srv://tahmid16122009_db_user:xha1hQWvPVgPfNAc@cluster0.uxtdbbt.mongodb.net/?retryWrites=true&w=majority")
 db = client["shop"]
 products_col = db["products"]
 orders_col = db["orders"]
@@ -30,39 +29,42 @@ def home():
     <h1 style='text-align:center;'>🛍️ Shoes Shop Pro</h1>
     <div style='text-align:center;'>
         <a href='/products'>Products</a> |
-        <a href='/admin'>Admin Panel</a>
+        <a href='/admin'>Admin</a>
     </div>
     """
 
 # ================= PRODUCTS =================
 @app.route('/products')
 def products():
+    try:
+        items = list(products_col.find())
 
-    items = list(products_col.find())
+        html = "<h2 style='text-align:center;'>🔥 Products</h2>"
+        html += "<div style='display:flex;flex-wrap:wrap;justify-content:center;'>"
 
-    html = "<h2 style='text-align:center;'>🔥 Products</h2><div style='display:flex;flex-wrap:wrap;justify-content:center;'>"
+        for p in items:
+            html += f"""
+            <div style='border:1px solid #ccc;margin:10px;padding:10px;width:200px;text-align:center;'>
+                <img src="{p.get('media','')}" width="150"><br>
+                <h3>{p.get('name','')}</h3>
+                <p>৳ {p.get('price','')}</p>
+                <p>{p.get('color','')} | {p.get('size','')}</p>
 
-    for i, p in enumerate(items):
-        html += f"""
-        <div style='border:1px solid #ccc;margin:10px;padding:10px;width:200px;text-align:center;'>
-            <img src="{p['media']}" width="150"><br>
-            <h3>{p['name']}</h3>
-            <p>৳ {p['price']}</p>
-            <p>{p['color']} | {p['size']}</p>
-            <a href='/buy/{p['id']}'>Order</a>
-            <br><br>
-            <a href='/delete/{p['id']}' style='color:red;'>Delete</a>
-        </div>
-        """
+                <a href='/buy/{p.get('id','')}'>Order</a><br><br>
+                <a href='/delete/{p.get('id','')}' style='color:red;'>Delete</a>
+            </div>
+            """
 
-    return html + "</div>"
+        return html + "</div>"
+
+    except Exception as e:
+        return f"Error: {str(e)}"
 
 # ================= BUY =================
 @app.route('/buy/<id>')
 def buy(id):
-
     return f"""
-    <h2 style='text-align:center;'>Place Order</h2>
+    <h2 style='text-align:center;'>Order Product</h2>
 
     <form action='/order/{id}' method='POST' style='text-align:center;'>
         <input name='name' placeholder='Name'><br><br>
@@ -75,17 +77,20 @@ def buy(id):
 # ================= ORDER =================
 @app.route('/order/<id>', methods=['POST'])
 def order(id):
+    try:
+        product = products_col.find_one({"id": id})
 
-    product = products_col.find_one({"id": id})
+        orders_col.insert_one({
+            "product": product,
+            "name": request.form.get('name'),
+            "phone": request.form.get('phone'),
+            "address": request.form.get('address')
+        })
 
-    orders_col.insert_one({
-        "product": product,
-        "customer": request.form['name'],
-        "phone": request.form['phone'],
-        "address": request.form['address']
-    })
+        return "<h2 style='color:green;text-align:center;'>Order Placed ✅</h2>"
 
-    return "<h2 style='text-align:center;color:green;'>Order Placed ✅</h2>"
+    except Exception as e:
+        return str(e)
 
 # ================= ADMIN =================
 @app.route('/admin')
@@ -102,8 +107,7 @@ def admin():
 # ================= DASHBOARD =================
 @app.route('/dashboard', methods=['POST'])
 def dashboard():
-
-    if request.form['pass'] != ADMIN_PASSWORD:
+    if request.form.get('pass') != ADMIN_PASSWORD:
         return "Wrong Password"
 
     session['admin'] = True
@@ -127,38 +131,43 @@ def dashboard():
     <h3>Orders</h3>
     """ + str(orders)
 
-# ================= ADD PRODUCT =================
+# ================= ADD =================
 @app.route('/add', methods=['POST'])
 def add():
+    try:
+        if not session.get('admin'):
+            return "Not allowed"
 
-    if not session.get('admin'):
-        return "Not allowed"
+        file = request.files.get('media')
 
-    file = request.files['media']
+        upload = cloudinary.uploader.upload(file, resource_type="auto")
 
-    upload = cloudinary.uploader.upload(file, resource_type="auto")
+        products_col.insert_one({
+            "id": str(uuid.uuid4()),
+            "name": request.form.get('name'),
+            "price": request.form.get('price'),
+            "media": upload.get('secure_url'),
+            "color": request.form.get('color'),
+            "size": request.form.get('size')
+        })
 
-    products_col.insert_one({
-        "id": str(uuid.uuid4()),
-        "name": request.form['name'],
-        "price": request.form['price'],
-        "media": upload['secure_url'],
-        "color": request.form['color'],
-        "size": request.form['size']
-    })
+        return redirect('/products')
 
-    return redirect('/products')
+    except Exception as e:
+        return str(e)
 
 # ================= DELETE =================
 @app.route('/delete/<id>')
 def delete(id):
+    try:
+        if not session.get('admin'):
+            return "Not allowed"
 
-    if not session.get('admin'):
-        return "Not allowed"
+        products_col.delete_one({"id": id})
+        return redirect('/products')
 
-    products_col.delete_one({"id": id})
-
-    return redirect('/products')
+    except Exception as e:
+        return str(e)
 
 # ================= RUN =================
 if __name__ == "__main__":
