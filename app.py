@@ -1,168 +1,178 @@
-from flask import Flask, request, redirect
+from flask import Flask, request, redirect, session
 
 app = Flask(__name__)
+app.secret_key = "secret123"
 
-cart = []
+# ======================
+# DATABASE (IN MEMORY)
+# ======================
+products = []
 orders = []
 
-# PRODUCTS DATABASE (NEW + OLD)
-products = [
-    {
-        "id": "nike_air",
-        "name": "Nike Air Max",
-        "price": 3200,
-        "img": "https://via.placeholder.com/300",
-        "colors": ["Black", "White"],
-        "sizes": ["40", "41", "42", "43"]
-    },
-    {
-        "id": "adidas_run",
-        "name": "Adidas Running",
-        "price": 2700,
-        "img": "https://via.placeholder.com/300",
-        "colors": ["Red", "Blue"],
-        "sizes": ["40", "41", "42"]
-    },
-    {
-        "id": "puma_sport",
-        "name": "Puma Sport",
-        "price": 2500,
-        "img": "https://via.placeholder.com/300",
-        "colors": ["Black", "Green"],
-        "sizes": ["39", "40", "41", "42"]
-    },
-    {
-        "id": "new_balance",
-        "name": "New Balance",
-        "price": 2900,
-        "img": "https://via.placeholder.com/300",
-        "colors": ["Grey", "White"],
-        "sizes": ["40", "41", "42", "43"]
-    }
-]
+ADMIN_PASSWORD = "admin123"
 
+# ======================
 # HOME
+# ======================
 @app.route('/')
 def home():
     return """
-    <h1 style='text-align:center;'>👟 Shoes Place</h1>
+    <h1 style='text-align:center;'>👟 My E-Commerce Shop</h1>
+
     <div style='text-align:center;'>
         <a href='/products'>Products</a> |
-        <a href='/cart'>Cart</a> |
-        <a href='/admin'>Admin</a>
+        <a href='/admin_login'>Admin</a>
     </div>
     """
 
-# PRODUCTS
+# ======================
+# VIEW PRODUCTS
+# ======================
 @app.route('/products')
-def products_page():
-    html = "<h2 style='text-align:center;'>🔥 All Shoes</h2>"
-    html += "<div style='display:flex;flex-wrap:wrap;justify-content:center;gap:20px;'>"
+def show_products():
 
-    for p in products:
+    html = "<h2 style='text-align:center;'>🛒 Products</h2>"
+
+    for i, p in enumerate(products):
         html += f"""
-        <div style='border:1px solid #ccc;padding:10px;width:220px;text-align:center;'>
-            <img src="{p['img']}" width="200"><br>
-            <h3>{p['name']}</h3>
-            <p>{p['price']}৳</p>
-
-            <a href='/add/{p['id']}' style='background:green;color:white;padding:5px;display:block;margin:5px;'>Add to Cart</a>
-
-            <a href='/order_form/{p['id']}' style='background:orange;color:white;padding:5px;display:block;'>Order Now</a>
+        <div style='border:1px solid #ccc;margin:10px;padding:10px;text-align:center;'>
+            <img src="{p['img']}" width="150"><br>
+            <b>{p['name']}</b><br>
+            {p['price']}৳<br>
+            <a href='/buy/{i}'>Order Now</a>
         </div>
         """
 
-    html += "</div>"
-    return html
+    return html + "<br><center><a href='/'>Home</a></center>"
 
-# ADD CART
-@app.route('/add/<pid>')
-def add(pid):
-    cart.append(pid)
-    return redirect('/products')
+# ======================
+# BUY PAGE
+# ======================
+@app.route('/buy/<int:id>')
+def buy(id):
 
-# CART
-@app.route('/cart')
-def cart_page():
-    items = [p for p in products if p['id'] in cart]
-
-    html = "<h2 style='text-align:center;'>🛒 Cart</h2>"
-
-    for i in items:
-        html += f"<p style='text-align:center;'>{i['name']} - {i['price']}৳</p>"
-
-    return html
-
-# ORDER FORM
-@app.route('/order_form/<pid>')
-def order_form(pid):
-    product = next((p for p in products if p['id'] == pid), None)
-
-    if not product:
-        return "Product not found"
+    p = products[id]
 
     return f"""
-    <h2 style='text-align:center;'>📦 Order Now</h2>
+    <h2 style='text-align:center;'>Order: {p['name']}</h2>
 
-    <form action='/submit_order' method='POST' style='text-align:center;'>
+    <form action='/place_order/{id}' method='POST' style='text-align:center;'>
 
-    <input name='name' placeholder='Your Name' required><br><br>
-    <input name='phone' placeholder='Phone' required><br><br>
-    <input name='address' placeholder='Address' required><br><br>
+        <input name='name' placeholder='Name' required><br><br>
+        <input name='phone' placeholder='Phone' required><br><br>
+        <input name='address' placeholder='Address' required><br><br>
 
-    <input name='product' value='{product['name']}' readonly><br><br>
-
-    <select name='color'>
-        <option>{product['colors'][0]}</option>
-        <option>{product['colors'][1]}</option>
-    </select><br><br>
-
-    <select name='size'>
-        <option>{product['sizes'][0]}</option>
-        <option>{product['sizes'][1]}</option>
-    </select><br><br>
-
-    <input name='qty' placeholder='Quantity'><br><br>
-
-    <button>Place Order</button>
-
+        <button>Place Order</button>
     </form>
     """
 
-# SUBMIT ORDER
-@app.route('/submit_order', methods=['POST'])
-def submit_order():
+# ======================
+# PLACE ORDER
+# ======================
+@app.route('/place_order/<int:id>', methods=['POST'])
+def place_order(id):
 
-    data = {
+    p = products[id]
+
+    order = {
+        "product": p['name'],
+        "price": p['price'],
         "name": request.form['name'],
         "phone": request.form['phone'],
         "address": request.form['address'],
-        "product": request.form['product'],
-        "color": request.form['color'],
-        "size": request.form['size'],
-        "qty": request.form['qty']
+        "status": "Paid (Demo)"
     }
 
-    orders.append(data)
+    orders.append(order)
 
-    print("NEW ORDER:", data)
+    return """
+    <h2 style='text-align:center;color:green;'>Order Placed ✅</h2>
+    <a href='/products'>Back</a>
+    """
 
-    return "<h2 style='text-align:center;color:green;'>Order Placed ✅</h2><a href='/'>Home</a>"
+# ======================
+# ADMIN LOGIN
+# ======================
+@app.route('/admin_login')
+def admin_login():
+    return """
+    <h2 style='text-align:center;'>Admin Login</h2>
 
+    <form action='/admin' method='POST' style='text-align:center;'>
+        <input name='password' placeholder='Password'><br><br>
+        <button>Login</button>
+    </form>
+    """
+
+# ======================
 # ADMIN PANEL
-@app.route('/admin')
+# ======================
+@app.route('/admin', methods=['POST'])
 def admin():
-    html = "<h2 style='text-align:center;'>🧾 Orders</h2>"
+
+    if request.form['password'] != ADMIN_PASSWORD:
+        return "Wrong password"
+
+    session['admin'] = True
+
+    return redirect('/dashboard')
+
+
+@app.route('/dashboard')
+def dashboard():
+
+    if not session.get('admin'):
+        return "Access Denied"
+
+    html = "<h2 style='text-align:center;'>📦 ADMIN DASHBOARD</h2>"
+
+    # ADD PRODUCT FORM
+    html += """
+    <h3 style='text-align:center;'>➕ Add Product</h3>
+
+    <form action='/add_product' method='POST' style='text-align:center;'>
+
+        <input name='name' placeholder='Product Name'><br><br>
+        <input name='price' placeholder='Price'><br><br>
+        <input name='img' placeholder='Image URL'><br><br>
+
+        <button>Add Product</button>
+    </form>
+
+    <hr>
+    <h3 style='text-align:center;'>📦 Orders</h3>
+    """
 
     for o in orders:
         html += f"""
-        <div style='border:1px solid gray;margin:10px;padding:10px'>
-        <b>{o['product']}</b><br>
-        {o['name']} | {o['phone']}<br>
-        {o['color']} | {o['size']} | Qty: {o['qty']}
+        <div style='border:1px solid black;margin:10px;padding:10px'>
+            <b>{o['product']}</b><br>
+            {o['name']} | {o['phone']}<br>
+            {o['address']}<br>
+            {o['status']}
         </div>
         """
 
     return html
 
+# ======================
+# ADD PRODUCT (ADMIN ONLY)
+# ======================
+@app.route('/add_product', methods=['POST'])
+def add_product():
+
+    if not session.get('admin'):
+        return "Not allowed"
+
+    products.append({
+        "name": request.form['name'],
+        "price": request.form['price'],
+        "img": request.form['img']
+    })
+
+    return redirect('/dashboard')
+
+# ======================
+# RUN APP
+# ======================
 app.run(host='0.0.0.0', port=5000)
