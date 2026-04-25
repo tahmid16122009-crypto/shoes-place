@@ -13,18 +13,18 @@ cloudinary.config(
     api_secret="BFp92tezRMgWq5tkb3inueu49FI"
 )
 
-# ================= DATABASE =================
+# ================= DATABASE (memory) =================
 products = []
 orders = []
 
-ADMIN_PASSWORD = "Tahmid2009"
+# 🔥 ADMIN PASSWORD (SET BY YOU)
+ADMIN_PASSWORD = "xha1hQWvPVgPfNAc"
 
 # ================= HOME =================
 @app.route('/')
 def home():
     return """
-    <h1 style='text-align:center;font-family:sans-serif;'>🛍️ Shoes Shop Pro</h1>
-
+    <h1 style='text-align:center;'>🛍️ Shoes Shop Pro</h1>
     <div style='text-align:center;'>
         <a href='/products'>Products</a> |
         <a href='/admin'>Admin Panel</a>
@@ -35,19 +35,15 @@ def home():
 @app.route('/products')
 def products_page():
 
-    html = """
-    <h2 style='text-align:center;'>🔥 Products</h2>
-    <div style='display:flex;flex-wrap:wrap;justify-content:center;'>
-    """
+    html = "<h2 style='text-align:center;'>🔥 Products</h2><div style='display:flex;flex-wrap:wrap;justify-content:center;'>"
 
     for i, p in enumerate(products):
         html += f"""
-        <div style='border:1px solid #ddd;border-radius:10px;margin:10px;padding:10px;width:200px;text-align:center;'>
+        <div style='border:1px solid #ccc;margin:10px;padding:10px;width:200px;text-align:center;'>
             <img src="{p['media']}" width="150"><br>
-
             <h3>{p['name']}</h3>
-            <p>💰 {p['price']}৳</p>
-            <p>🎨 {p['color']} | 📏 {p['size']}</p>
+            <p>৳ {p['price']}</p>
+            <p>{p['color']} | {p['size']}</p>
 
             <a href='/buy/{i}'>Order</a><br><br>
 
@@ -89,7 +85,7 @@ def order(id):
 
     return "<h2 style='text-align:center;color:green;'>Order Placed ✅</h2>"
 
-# ================= ADMIN LOGIN =================
+# ================= ADMIN =================
 @app.route('/admin')
 def admin():
     return """
@@ -127,10 +123,11 @@ def dashboard():
     </form>
 
     <hr>
-    <h3 style='text-align:center;'>Orders</h3>
-    """ + "<br>".join([o['name'] + " ordered " + o['product'] for o in orders])
 
-# ================= ADD PRODUCT (IMAGE + VIDEO) =================
+    <h3>Orders</h3>
+    """ + str(orders)
+
+# ================= ADD PRODUCT =================
 @app.route('/add', methods=['POST'])
 def add():
 
@@ -139,18 +136,13 @@ def add():
 
     file = request.files['media']
 
-    upload = cloudinary.uploader.upload(
-        file,
-        resource_type="auto"   # 🔥 image + video both support
-    )
-
-    media_url = upload['secure_url']
+    upload = cloudinary.uploader.upload(file, resource_type="auto")
 
     products.append({
         "id": str(uuid.uuid4()),
         "name": request.form['name'],
         "price": request.form['price'],
-        "media": media_url,
+        "media": upload['secure_url'],
         "color": request.form['color'],
         "size": request.form['size']
     })
@@ -180,7 +172,6 @@ def edit(id):
 
         <input name='name' value='{p['name']}'><br><br>
         <input name='price' value='{p['price']}'><br><br>
-
         <input name='color' value='{p['color']}'><br><br>
         <input name='size' value='{p['size']}'><br><br>
 
@@ -200,3 +191,5 @@ def update(id):
     return redirect('/products')
 
 # ================= RUN =================
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
