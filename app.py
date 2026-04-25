@@ -200,4 +200,3 @@ def update(id):
     return redirect('/products')
 
 # ================= RUN =================
-app.run(host='0.0.0.0', port=5000)
