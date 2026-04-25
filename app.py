@@ -1,50 +1,64 @@
-from flask import Flask, request, redirect, session, render_template_string
-import os
-from werkzeug.utils import secure_filename
+from flask import Flask, request, redirect, session
+import cloudinary
+import cloudinary.uploader
+import uuid
 
 app = Flask(__name__)
 app.secret_key = "secret123"
 
-UPLOAD_FOLDER = "static/uploads"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+# ================= CLOUDINARY =================
+cloudinary.config(
+    cloud_name="dpfswecue",
+    api_key="814473384843783",
+    api_secret="BFp92tezRMgWq5tkb3inueu49FI"
+)
 
-# DATABASE (temporary)
+# ================= DATABASE =================
 products = []
 orders = []
 
-ADMIN_PASSWORD = "admin123"
+ADMIN_PASSWORD = "Tahmid2009"
 
 # ================= HOME =================
 @app.route('/')
 def home():
     return """
-    <h1 style='text-align:center;'>👟 Shoes Shop</h1>
+    <h1 style='text-align:center;font-family:sans-serif;'>🛍️ Shoes Shop Pro</h1>
+
     <div style='text-align:center;'>
         <a href='/products'>Products</a> |
-        <a href='/admin_login'>Admin</a>
+        <a href='/admin'>Admin Panel</a>
     </div>
     """
 
 # ================= PRODUCTS =================
 @app.route('/products')
-def show_products():
+def products_page():
 
-    html = "<h2 style='text-align:center;'>Products</h2>"
+    html = """
+    <h2 style='text-align:center;'>🔥 Products</h2>
+    <div style='display:flex;flex-wrap:wrap;justify-content:center;'>
+    """
 
     for i, p in enumerate(products):
         html += f"""
-        <div style='text-align:center;border:1px solid #ccc;margin:10px;padding:10px'>
-            <img src='/{p['img']}' width='150'><br>
-            <b>{p['name']}</b><br>
-            {p['price']}৳<br>
-            <a href='/buy/{i}'>Order Now</a>
+        <div style='border:1px solid #ddd;border-radius:10px;margin:10px;padding:10px;width:200px;text-align:center;'>
+            <img src="{p['media']}" width="150"><br>
+
+            <h3>{p['name']}</h3>
+            <p>💰 {p['price']}৳</p>
+            <p>🎨 {p['color']} | 📏 {p['size']}</p>
+
+            <a href='/buy/{i}'>Order</a><br><br>
+
+            <a href='/delete/{i}' style='color:red;'>Delete</a>
+            <a href='/edit/{i}'>Edit</a>
         </div>
         """
 
-    return html + "<br><center><a href='/'>Home</a></center>"
+    return html + "</div>"
 
-# ================= ORDER PAGE =================
+# ================= BUY =================
 @app.route('/buy/<int:id>')
 def buy(id):
 
@@ -53,112 +67,137 @@ def buy(id):
     return f"""
     <h2 style='text-align:center;'>Order {p['name']}</h2>
 
-    <form action='/place_order/{id}' method='POST' style='text-align:center;'>
-
-        <input name='name' placeholder='Name' required><br><br>
-        <input name='phone' placeholder='Phone' required><br><br>
-        <input name='address' placeholder='Address' required><br><br>
-
+    <form action='/order/{id}' method='POST' style='text-align:center;'>
+        <input name='name' placeholder='Name'><br><br>
+        <input name='phone' placeholder='Phone'><br><br>
+        <input name='address' placeholder='Address'><br><br>
         <button>Place Order</button>
     </form>
     """
 
-# ================= PLACE ORDER =================
-@app.route('/place_order/<int:id>', methods=['POST'])
-def place_order(id):
+# ================= ORDER =================
+@app.route('/order/<int:id>', methods=['POST'])
+def order(id):
 
     p = products[id]
 
     orders.append({
         "product": p['name'],
-        "price": p['price'],
         "name": request.form['name'],
-        "phone": request.form['phone'],
-        "address": request.form['address']
+        "phone": request.form['phone']
     })
 
-    return "<h2 style='text-align:center;color:green;'>Order Placed ✅</h2><a href='/products'>Back</a>"
+    return "<h2 style='text-align:center;color:green;'>Order Placed ✅</h2>"
 
 # ================= ADMIN LOGIN =================
-@app.route('/admin_login')
-def admin_login():
+@app.route('/admin')
+def admin():
     return """
     <h2 style='text-align:center;'>Admin Login</h2>
-    <form action='/admin' method='POST' style='text-align:center;'>
-        <input name='password' type='password' placeholder='Password'><br><br>
+
+    <form action='/dashboard' method='POST' style='text-align:center;'>
+        <input type='password' name='pass' placeholder='Password'><br><br>
         <button>Login</button>
     </form>
     """
 
-# ================= ADMIN PANEL =================
-@app.route('/admin', methods=['POST'])
-def admin():
+# ================= DASHBOARD =================
+@app.route('/dashboard', methods=['POST'])
+def dashboard():
 
-    if request.form['password'] != ADMIN_PASSWORD:
+    if request.form['pass'] != ADMIN_PASSWORD:
         return "Wrong Password"
 
     session['admin'] = True
 
-    return redirect('/dashboard')
+    return """
+    <h2 style='text-align:center;'>📦 Admin Panel</h2>
 
-# ================= DASHBOARD =================
-@app.route('/dashboard')
-def dashboard():
+    <form action='/add' method='POST' enctype='multipart/form-data' style='text-align:center;'>
 
-    if not session.get('admin'):
-        return "Access Denied"
-
-    html = """
-    <h2 style='text-align:center;'>📦 Admin Dashboard</h2>
-
-    <h3 style='text-align:center;'>➕ Add Product</h3>
-
-    <form action='/add_product' method='POST' enctype='multipart/form-data' style='text-align:center;'>
         <input name='name' placeholder='Product Name'><br><br>
         <input name='price' placeholder='Price'><br><br>
-        <input type='file' name='image'><br><br>
+
+        <input type='file' name='media'><br><br>
+
+        <input name='color' placeholder='Color'><br><br>
+        <input name='size' placeholder='Size'><br><br>
+
         <button>Add Product</button>
     </form>
 
     <hr>
-    <h3 style='text-align:center;'>🧾 Orders</h3>
-    """
+    <h3 style='text-align:center;'>Orders</h3>
+    """ + "<br>".join([o['name'] + " ordered " + o['product'] for o in orders])
 
-    for o in orders:
-        html += f"""
-        <div style='border:1px solid black;margin:10px;padding:10px'>
-            <b>{o['product']}</b><br>
-            {o['name']} | {o['phone']}<br>
-            {o['address']}<br>
-            {o['price']}৳
-        </div>
-        """
-
-    return html
-
-# ================= ADD PRODUCT =================
-@app.route('/add_product', methods=['POST'])
-def add_product():
+# ================= ADD PRODUCT (IMAGE + VIDEO) =================
+@app.route('/add', methods=['POST'])
+def add():
 
     if not session.get('admin'):
         return "Not allowed"
 
-    name = request.form['name']
-    price = request.form['price']
+    file = request.files['media']
 
-    image = request.files['image']
-    filename = secure_filename(image.filename)
+    upload = cloudinary.uploader.upload(
+        file,
+        resource_type="auto"   # 🔥 image + video both support
+    )
 
-    path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    image.save(path)
+    media_url = upload['secure_url']
 
     products.append({
-        "name": name,
-        "price": price,
-        "img": path
+        "id": str(uuid.uuid4()),
+        "name": request.form['name'],
+        "price": request.form['price'],
+        "media": media_url,
+        "color": request.form['color'],
+        "size": request.form['size']
     })
 
-    return redirect('/dashboard')
+    return redirect('/products')
+
+# ================= DELETE =================
+@app.route('/delete/<int:id>')
+def delete(id):
+
+    if not session.get('admin'):
+        return "Not allowed"
+
+    products.pop(id)
+    return redirect('/products')
+
+# ================= EDIT =================
+@app.route('/edit/<int:id>')
+def edit(id):
+
+    p = products[id]
+
+    return f"""
+    <h2 style='text-align:center;'>Edit Product</h2>
+
+    <form action='/update/{id}' method='POST' style='text-align:center;'>
+
+        <input name='name' value='{p['name']}'><br><br>
+        <input name='price' value='{p['price']}'><br><br>
+
+        <input name='color' value='{p['color']}'><br><br>
+        <input name='size' value='{p['size']}'><br><br>
+
+        <button>Update</button>
+    </form>
+    """
+
+# ================= UPDATE =================
+@app.route('/update/<int:id>', methods=['POST'])
+def update(id):
+
+    products[id]['name'] = request.form['name']
+    products[id]['price'] = request.form['price']
+    products[id]['color'] = request.form['color']
+    products[id]['size'] = request.form['size']
+
+    return redirect('/products')
 
 # ================= RUN =================
 app.run(host='0.0.0.0', port=5000)
