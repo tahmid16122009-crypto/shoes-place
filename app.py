@@ -26,12 +26,17 @@ ADMIN_PASSWORD = "Tahmid1122"
 @app.route('/')
 def home():
     return """
-    <h1 style='text-align:center;'>🛍️ PRO SHOP</h1>
-    <div style='text-align:center;'>
-        <a href='/products'>Products</a> |
-        <a href='/cart'>Cart</a> |
-        <a href='/admin'>Admin</a>
-    </div>
+    <html>
+    <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    </head>
+    <body style='text-align:center;font-family:Arial;background:#f5f5f5'>
+    <h1>🛍️ Pro Shop</h1>
+    <a href='/products'>Products</a> | 
+    <a href='/cart'>Cart</a> | 
+    <a href='/admin'>Admin</a>
+    </body>
+    </html>
     """
 
 # ================= PRODUCTS =================
@@ -39,124 +44,135 @@ def home():
 def products():
     items = list(products_col.find())
 
-    html = "<h2 style='text-align:center;'>Products</h2>"
-    html += "<div style='display:flex;flex-wrap:wrap;justify-content:center;'>"
+    html = "<h2 style='text-align:center;'>Products</h2><div style='display:flex;flex-wrap:wrap;justify-content:center;'>"
 
     for p in items:
         html += f"""
-        <div style='border:1px solid #ccc;margin:10px;padding:10px;width:200px;text-align:center;'>
-            <img src="{p.get('media','')}" width="150"><br>
-            <h4>{p.get('name','')}</h4>
-            <p>৳ {p.get('price','')}</p>
-
-            <a href='/add_cart/{p.get('id','')}'>🛒 Add to Cart</a><br><br>
-            <a href='/checkout_single/{p.get('id','')}'>⚡ Order Now</a>
+        <div style='width:200px;background:white;margin:10px;padding:10px;border-radius:10px;text-align:center'>
+            <img src="{p['images'][0]}" width="150"><br>
+            <h4>{p['name']}</h4>
+            <p>৳ {p['price']}</p>
+            <a href='/product/{p["id"]}'>View</a>
         </div>
         """
 
     return html + "</div>"
 
-# ================= SINGLE ORDER =================
-@app.route('/checkout_single/<id>')
-def checkout_single(id):
-    return f"""
-    <h2 style='text-align:center;'>Order Product</h2>
-    <form action='/place_single_order/{id}' method='POST' style='text-align:center;'>
-        <input name='name' placeholder='Name'><br><br>
-        <input name='phone' placeholder='Phone'><br><br>
-        <input name='address' placeholder='Address'><br><br>
-        <button>Place Order</button>
-    </form>
-    """
-
-@app.route('/place_single_order/<id>', methods=['POST'])
-def place_single_order(id):
+# ================= PRODUCT DETAIL =================
+@app.route('/product/<id>')
+def product(id):
     p = products_col.find_one({"id": id})
 
-    orders_col.insert_one({
-        "product": p.get('name'),
-        "name": request.form.get('name'),
-        "phone": request.form.get('phone'),
-        "address": request.form.get('address')
-    })
+    images_html = "".join([f"<img src='{img}' width='80'>" for img in p.get("images", [])])
 
-    return "<h2 style='color:green;text-align:center;'>Order Done ✅</h2>"
+    return f"""
+    <div style='text-align:center'>
+        <h2>{p['name']}</h2>
+        <img src="{p['images'][0]}" width="250"><br>
+        {images_html}
+        <p>{p.get('description','')}</p>
+        <p>৳ {p['price']}</p>
 
-# ================= CART =================
-@app.route('/add_cart/<id>')
+        <form action='/add_cart/{id}' method='post'>
+        Quantity: <input type='number' name='qty' value='1'><br><br>
+        <button>Add to Cart</button>
+        </form>
+
+        <br>
+        <a href='/order/{id}'>⚡ Order Now</a>
+    </div>
+    """
+
+# ================= ADD CART =================
+@app.route('/add_cart/<id>', methods=['POST'])
 def add_cart(id):
+
+    qty = int(request.form.get('qty', 1))
+
     if 'cart' not in session:
         session['cart'] = []
 
-    session['cart'].append(id)
+    session['cart'].append({"id": id, "qty": qty})
     session.modified = True
 
     return redirect('/cart')
 
+# ================= CART =================
 @app.route('/cart')
-def cart_page():
+def cart():
 
-    cart_ids = session.get('cart', [])
-    items = []
+    cart_items = session.get('cart', [])
+    html = "<h2 style='text-align:center'>Cart</h2>"
 
-    for cid in cart_ids:
-        p = products_col.find_one({"id": cid})
-        if p:
-            items.append(p)
-
-    html = "<h2 style='text-align:center;'>🛒 Cart</h2>"
-
-    for p in items:
+    for item in cart_items:
+        p = products_col.find_one({"id": item['id']})
         html += f"""
-        <div style='text-align:center;'>
-            {p.get('name')} - {p.get('price')}৳
+        <div style='text-align:center'>
+        {p['name']} x {item['qty']} = {int(p['price'])*item['qty']}৳
         </div><hr>
         """
 
-    html += """
-    <div style='text-align:center;'>
-        <a href='/checkout'>Checkout All</a>
-    </div>
-    """
+    html += "<div style='text-align:center'><a href='/checkout'>Checkout</a></div>"
 
     return html
 
-# ================= CHECKOUT ALL =================
+# ================= ORDER PAGE =================
+@app.route('/order/<id>')
+def order(id):
+    p = products_col.find_one({"id": id})
+
+    return f"""
+    <div style='text-align:center'>
+        <img src="{p['images'][0]}" width="150"><br>
+        <h3>{p['name']}</h3>
+
+        <form action='/place_single/{id}' method='POST'>
+        <input name='name' placeholder='Name'><br><br>
+        <input name='phone' placeholder='Phone'><br><br>
+        <input name='address' placeholder='Address'><br><br>
+        Quantity: <input name='qty' type='number' value='1'><br><br>
+        <button>Place Order</button>
+        </form>
+    </div>
+    """
+
+@app.route('/place_single/<id>', methods=['POST'])
+def place_single(id):
+    orders_col.insert_one({
+        "product_id": id,
+        "qty": request.form.get('qty'),
+        "name": request.form.get('name')
+    })
+    return "Order Done"
+
+# ================= CHECKOUT =================
 @app.route('/checkout')
 def checkout():
     return """
-    <h2 style='text-align:center;'>Checkout</h2>
-    <form action='/place_order' method='POST' style='text-align:center;'>
-        <input name='name'><br><br>
-        <input name='phone'><br><br>
-        <input name='address'><br><br>
-        <button>Place Order</button>
+    <form action='/place_order' method='POST'>
+    Name <input name='name'><br>
+    Phone <input name='phone'><br>
+    Address <input name='address'><br>
+    <button>Order All</button>
     </form>
     """
 
 @app.route('/place_order', methods=['POST'])
 def place_order():
-    cart_ids = session.get('cart', [])
-
     orders_col.insert_one({
-        "items": cart_ids,
-        "name": request.form.get('name'),
-        "phone": request.form.get('phone'),
-        "address": request.form.get('address')
+        "cart": session.get('cart', []),
+        "name": request.form.get('name')
     })
-
     session['cart'] = []
-
-    return "<h2 style='color:green;text-align:center;'>Order Placed 🎉</h2>"
+    return "Order Success"
 
 # ================= ADMIN =================
 @app.route('/admin')
 def admin():
     return """
-    <form action='/dashboard' method='POST' style='text-align:center;'>
-        <h2>Admin Login</h2>
-        <input type='password' name='pass'>
-        <button>Login</button>
+    <form action='/dashboard' method='POST'>
+    <input type='password' name='pass'>
+    <button>Login</button>
     </form>
     """
 
@@ -166,43 +182,47 @@ def dashboard():
     if request.form.get('pass') != ADMIN_PASSWORD:
         return "Wrong Password"
 
-    orders = list(orders_col.find())
-
-    html = "<h2>📦 Orders</h2>"
-
-    for o in orders:
-        html += f"""
-        <div>
-        {o.get('name')} | {o.get('phone')}<br>
-        {o.get('address')}
-        </div><hr>
-        """
-
-    html += """
-    <h3>Add Product</h3>
+    return """
+    <h2>Add Product</h2>
     <form action='/add' method='POST' enctype='multipart/form-data'>
-        <input name='name' placeholder='Name'><br><br>
-        <input name='price' placeholder='Price'><br><br>
-        <input name='description' placeholder='Description'><br><br>
-        <input type='file' name='media'><br><br>
-        <button>Add Product</button>
+    Name <input name='name'><br>
+    Price <input name='price'><br>
+    Description <input name='description'><br>
+    Colors <input name='colors'><br>
+    Sizes <input name='sizes'><br>
+    Images (max 5) <input type='file' name='images' multiple><br>
+    Videos (max 3) <input type='file' name='videos' multiple><br>
+    <button>Add</button>
     </form>
     """
-
-    return html
 
 # ================= ADD PRODUCT =================
 @app.route('/add', methods=['POST'])
 def add():
-    file = request.files.get('media')
-    upload = cloudinary.uploader.upload(file, resource_type="auto")
+
+    images = request.files.getlist("images")
+    videos = request.files.getlist("videos")
+
+    img_urls = []
+    vid_urls = []
+
+    for img in images[:5]:
+        upload = cloudinary.uploader.upload(img)
+        img_urls.append(upload['secure_url'])
+
+    for vid in videos[:3]:
+        upload = cloudinary.uploader.upload(vid, resource_type="video")
+        vid_urls.append(upload['secure_url'])
 
     products_col.insert_one({
         "id": str(uuid.uuid4()),
         "name": request.form.get('name'),
         "price": request.form.get('price'),
         "description": request.form.get('description'),
-        "media": upload.get('secure_url')
+        "colors": request.form.get('colors'),
+        "sizes": request.form.get('sizes'),
+        "images": img_urls,
+        "videos": vid_urls
     })
 
     return redirect('/products')
