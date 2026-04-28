@@ -12,6 +12,7 @@
 {% for p in products %}
 <div style="border:1px solid #ccc; padding:10px; margin:10px;">
     <h3>{{p.name}}</h3>
+    <img src="{{p.image}}" width="150">
     <p>Price: {{p.price}}</p>
     <a href="/add_to_cart/{{p.id}}">Add to Cart</a>
 </div>
