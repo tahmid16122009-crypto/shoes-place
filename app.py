@@ -9,8 +9,11 @@ app.secret_key = "secret123"
 # ================= SUPABASE =================
 SUPABASE_URL = "https://hjwgjopshptmhlkcdagh.supabase.co"
 
-# 🔥 SECRET KEY now comes from Render (NOT GitHub)
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+# Safety check (important for Render crash debug)
+if not SUPABASE_KEY:
+    raise Exception("❌ SUPABASE_KEY not found in environment variables")
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
@@ -62,7 +65,7 @@ def order():
     session["cart"] = []
     return redirect("/")
 
-# ================= ADMIN PANEL =================
+# ================= ADMIN =================
 @app.route("/admin", methods=["GET", "POST"])
 def admin():
     if request.method == "POST":
@@ -71,7 +74,7 @@ def admin():
 
     return render_template("admin.html")
 
-# ================= ADD PRODUCT (IMAGE UPLOAD) =================
+# ================= ADD PRODUCT =================
 @app.route("/add_product", methods=["POST"])
 def add_product():
     name = request.form["name"]
@@ -94,4 +97,4 @@ def add_product():
 
 # ================= RUN =================
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()
