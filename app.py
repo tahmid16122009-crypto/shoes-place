@@ -1,37 +1,36 @@
 from flask import Flask, request, redirect, session
-
 from pymongo import MongoClient
 import uuid
 
 app = Flask(__name__)
-app.secret_key = "secret123"
+app.secret_key = "shop_secret_key"
 
 # ===== DATABASE =====
 client = MongoClient("mongodb+srv://tahmid16122009_db_user:xha1hQWvPVgPfNAc@cluster0.uxtdbbt.mongodb.net/?retryWrites=true&w=majority")
-db = client["shop"]
 
+db = client["shop"]
 products_col = db["products"]
 orders_col = db["orders"]
 
 ADMIN_PASS = "Tahmid1122"
 
-# ===== SIMPLE STYLE =====
-def style():
+# ===== STYLE =====
+def ui():
     return """
     <style>
-    body{font-family:sans-serif;background:#f2f2f2;text-align:center}
-    .card{background:#fff;padding:15px;margin:10px;border-radius:10px}
-    button{padding:10px 15px;border:none;background:#007bff;color:#fff;border-radius:5px}
+    body{font-family:sans-serif;background:#f5f5f5;text-align:center}
+    .box{background:white;padding:15px;margin:10px;border-radius:10px;box-shadow:0 0 5px #ccc}
+    a,button{padding:8px 12px;margin:5px;text-decoration:none}
+    button{background:#007bff;color:white;border:none;border-radius:5px}
     input{padding:8px;margin:5px;width:80%}
-    a{display:inline-block;margin:5px}
     </style>
     """
 
 # ===== HOME =====
 @app.route('/')
 def home():
-    return style() + """
-    <h1>🛍️ My Shop</h1>
+    return ui() + """
+    <h1>🛍️ Shop System</h1>
     <a href='/products'>Products</a>
     <a href='/cart'>Cart</a>
     <a href='/admin'>Admin</a>
@@ -40,33 +39,41 @@ def home():
 # ===== PRODUCTS =====
 @app.route('/products')
 def products():
-    html = style() + "<h2>Products</h2>"
+    html = ui() + "<h2>Products</h2>"
 
-    for p in products_col.find():
-        html += f"""
-        <div class='card'>
-            <h3>{p['name']}</h3>
-            <p>💰 {p['price']}৳</p>
+    try:
+        for p in products_col.find():
+            html += f"""
+            <div class='box'>
+                <h3>{p.get('name','')}</h3>
+                <p>💰 {p.get('price',0)}৳</p>
 
-            <form action='/add_to_cart' method='POST'>
-                <input type='hidden' name='id' value='{p['id']}'>
-                <button>Add to Cart</button>
-            </form>
+                <form action='/add_to_cart' method='POST'>
+                    <input type='hidden' name='id' value='{p.get("id")}'>
+                    <button>Add to Cart</button>
+                </form>
 
-            <br>
-            <a href='/order/{p['id']}'>Order Now</a>
-        </div>
-        """
+                <a href='/order/{p.get("id")}'>Order Now</a>
+            </div>
+            """
+    except:
+        html += "<p>Error loading products</p>"
 
     return html
 
 # ===== ADD TO CART =====
 @app.route('/add_to_cart', methods=['POST'])
 def add_to_cart():
-    pid = request.form['id']
+    pid = request.form.get('id')
 
     cart = session.get('cart', [])
-    cart.append(pid)
+
+    if not isinstance(cart, list):
+        cart = []
+
+    if pid:
+        cart.append(pid)
+
     session['cart'] = cart
 
     return redirect('/cart')
@@ -74,29 +81,38 @@ def add_to_cart():
 # ===== CART =====
 @app.route('/cart')
 def cart():
-    html = style() + "<h2>Cart</h2>"
+    html = ui() + "<h2>Cart</h2>"
     cart = session.get('cart', [])
+
+    if not isinstance(cart, list):
+        cart = []
 
     total = 0
 
-    for pid in cart:
-        p = products_col.find_one({"id": pid})
-        if p:
-            price = int(p['price'])
+    try:
+        for pid in cart:
+            p = products_col.find_one({"id": pid})
+            if not p:
+                continue
+
+            price = int(p.get("price", 0))
             total += price
 
             html += f"""
-            <div class='card'>
-                {p['name']} - {price}৳
+            <div class='box'>
+                {p.get('name','')} - {price}৳
                 <br>
-                <a href='/order/{pid}'>Order This</a>
+                <a href='/order/{pid}'>Order</a>
             </div>
             """
 
-    html += f"<h3>Total: {total}৳</h3>"
+        if len(cart) == 0:
+            html += "<p>Cart empty</p>"
 
-    if not cart:
-        html += "<p>Cart Empty</p>"
+        html += f"<h3>Total: {total}৳</h3>"
+
+    except:
+        html += "<p>Cart error handled</p>"
 
     return html
 
@@ -104,11 +120,12 @@ def cart():
 @app.route('/order/<pid>')
 def order(pid):
     p = products_col.find_one({"id": pid})
-    if not p:
-        return "Not found"
 
-    return style() + f"""
-    <h2>Order: {p['name']}</h2>
+    if not p:
+        return "Product not found"
+
+    return ui() + f"""
+    <h2>Order {p.get('name')}</h2>
 
     <form action='/place_order/{pid}' method='POST'>
         <input name='name' placeholder='Name'><br>
@@ -122,25 +139,30 @@ def order(pid):
 @app.route('/place_order/<pid>', methods=['POST'])
 def place_order(pid):
     p = products_col.find_one({"id": pid})
+
     if not p:
         return "Error"
 
-    orders_col.insert_one({
-        "product": p['name'],
-        "name": request.form['name'],
-        "phone": request.form['phone'],
-        "address": request.form['address']
-    })
+    try:
+        orders_col.insert_one({
+            "product": p.get('name'),
+            "price": p.get('price'),
+            "name": request.form.get('name'),
+            "phone": request.form.get('phone'),
+            "address": request.form.get('address')
+        })
+    except:
+        return "Order failed"
 
-    return style() + "<h2 style='color:green'>Order Successful</h2>"
+    return ui() + "<h2 style='color:green'>Order Success</h2>"
 
-# ===== ADMIN LOGIN =====
+# ===== ADMIN =====
 @app.route('/admin')
 def admin():
-    return style() + """
+    return ui() + """
     <h2>Admin Login</h2>
     <form action='/dashboard' method='POST'>
-        <input name='pass' placeholder='Password'><br>
+        <input name='pass' placeholder='Password'>
         <button>Login</button>
     </form>
     """
@@ -148,15 +170,15 @@ def admin():
 # ===== DASHBOARD =====
 @app.route('/dashboard', methods=['POST'])
 def dashboard():
-    if request.form['pass'] != ADMIN_PASS:
+    if request.form.get('pass') != ADMIN_PASS:
         return "Wrong password"
 
-    html = style() + """
+    html = ui() + """
     <h2>Admin Panel</h2>
 
     <h3>Add Product</h3>
     <form action='/add_product' method='POST'>
-        <input name='name' placeholder='Product Name'><br>
+        <input name='name' placeholder='Name'><br>
         <input name='price' placeholder='Price'><br>
         <button>Add</button>
     </form>
@@ -164,26 +186,32 @@ def dashboard():
     <h3>Orders</h3>
     """
 
-    for o in orders_col.find():
-        html += f"""
-        <div class='card'>
-            Product: {o['product']}<br>
-            Name: {o['name']}<br>
-            Phone: {o['phone']}<br>
-            Address: {o['address']}
-        </div>
-        """
+    try:
+        for o in orders_col.find():
+            html += f"""
+            <div class='box'>
+                Product: {o.get('product')}<br>
+                Name: {o.get('name')}<br>
+                Phone: {o.get('phone')}<br>
+                Address: {o.get('address')}
+            </div>
+            """
+    except:
+        html += "<p>No orders</p>"
 
     return html
 
 # ===== ADD PRODUCT =====
 @app.route('/add_product', methods=['POST'])
 def add_product():
-    products_col.insert_one({
-        "id": str(uuid.uuid4()),
-        "name": request.form['name'],
-        "price": request.form['price']
-    })
+    try:
+        products_col.insert_one({
+            "id": str(uuid.uuid4()),
+            "name": request.form.get('name'),
+            "price": request.form.get('price')
+        })
+    except:
+        pass
 
     return redirect('/products')
 
