@@ -1,6 +1,5 @@
 <h2>Admin Dashboard</h2>
 
-<h3>Add Product</h3>
 <form action="/add_product" method="POST" enctype="multipart/form-data">
     <input name="name" placeholder="Product Name"><br>
     <input name="price" placeholder="Price"><br>
@@ -11,12 +10,9 @@
 <h3>Orders</h3>
 
 {% for o in orders %}
-<div style="border:1px solid black; margin:10px; padding:10px;">
-    <b>{{o.product_name}}</b><br>
-    {{o.customer_name}} - {{o.phone}}<br>
-    Status: {{o.status}}<br><br>
-
-    <a href="/update_order/{{o.id}}/Order placed">✔ Place</a>
-    <a href="/update_order/{{o.id}}/Order cancelled">❌ Cancel</a>
+<div>
+{{o.product_name}} - {{o.customer_name}} - {{o.status}}
+<a href="/update_order/{{o.id}}/Order placed">✔</a>
+<a href="/update_order/{{o.id}}/Order cancelled">❌</a>
 </div>
 {% endfor %}
