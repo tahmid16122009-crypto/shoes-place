@@ -10,11 +10,13 @@
 <h2>Products</h2>
 
 {% for p in products %}
-<div style="border:1px solid #ccc; padding:10px; margin:10px;">
+<div style="border:1px solid black; padding:10px; margin:10px;">
     <h3>{{p.name}}</h3>
-    <img src="{{p.image}}" width="150">
-    <p>Price: {{p.price}}</p>
-    <a href="/add_to_cart/{{p.id}}">Add to Cart</a>
+    <img src="{{p.image}}" width="150"><br><br>
+    <b>Price:</b> {{p.price}}<br><br>
+
+    <!-- ✅ IMPORTANT FIX -->
+    <a href="/add/{{p.id}}">Add to Cart</a>
 </div>
 {% endfor %}
 
@@ -22,10 +24,9 @@
 
 <h2>Cart</h2>
 
-{% for i in cart_items %}
-<div style="border:1px solid #ccc; padding:10px; margin:10px;">
-    <h3>{{i.name}}</h3>
-    <p>{{i.price}}</p>
+{% for item in cart_items %}
+<div>
+    {{item.name}} - {{item.price}}
 </div>
 {% endfor %}
 
@@ -33,10 +34,16 @@
 
 <h2>Order</h2>
 
-<form method="POST" action="/order">
-    <input name="name" placeholder="Name"><br><br>
-    <input name="phone" placeholder="Phone"><br><br>
-    <input name="address" placeholder="Address"><br><br>
+<form action="/order" method="POST">
+    Name<br>
+    <input type="text" name="name"><br><br>
+
+    Phone<br>
+    <input type="text" name="phone"><br><br>
+
+    Address<br>
+    <input type="text" name="address"><br><br>
+
     <button type="submit">Place Order</button>
 </form>
 
