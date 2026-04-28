@@ -1,66 +1,60 @@
 from flask import Flask, request, redirect, session
+
 from pymongo import MongoClient
-import cloudinary
-import cloudinary.uploader
 import uuid
 
 app = Flask(__name__)
 app.secret_key = "secret123"
 
-# ===== CLOUDINARY =====
-cloudinary.config(
-    cloud_name="dpfswecue",
-    api_key="814473384843783",
-    api_secret="BFp92tezRMgWq5tkb3inueu49FI"
-)
+# ===== DATABASE =====
+client = MongoClient("mongodb+srv://tahmid16122009_db_user:xha1hQWvPVgPfNAc@cluster0.uxtdbbt.mongodb.net/?retryWrites=true&w=majority")
+db = client["shop"]
 
-# ===== MONGODB =====
-try:
-    client = MongoClient("mongodb+srv://tahmid16122009_db_user:xha1hQWvPVgPfNAc@cluster0.uxtdbbt.mongodb.net/?retryWrites=true&w=majority", serverSelectionTimeoutMS=5000)
-    db = client["shop"]
-    products_col = db["products"]
-    orders_col = db["orders"]
-except:
-    products_col = None
-    orders_col = None
+products_col = db["products"]
+orders_col = db["orders"]
 
-ADMIN_PASSWORD = "Tahmid1122"
+ADMIN_PASS = "Tahmid1122"
+
+# ===== SIMPLE STYLE =====
+def style():
+    return """
+    <style>
+    body{font-family:sans-serif;background:#f2f2f2;text-align:center}
+    .card{background:#fff;padding:15px;margin:10px;border-radius:10px}
+    button{padding:10px 15px;border:none;background:#007bff;color:#fff;border-radius:5px}
+    input{padding:8px;margin:5px;width:80%}
+    a{display:inline-block;margin:5px}
+    </style>
+    """
 
 # ===== HOME =====
 @app.route('/')
 def home():
-    return """
-    <h1 style='text-align:center'>🛍️ Shoes Shop</h1>
-    <div style='text-align:center'>
-        <a href='/products'>Products</a> |
-        <a href='/cart'>Cart</a> |
-        <a href='/admin'>Admin</a>
-    </div>
+    return style() + """
+    <h1>🛍️ My Shop</h1>
+    <a href='/products'>Products</a>
+    <a href='/cart'>Cart</a>
+    <a href='/admin'>Admin</a>
     """
 
 # ===== PRODUCTS =====
 @app.route('/products')
 def products():
-    html = "<h2 style='text-align:center'>Products</h2>"
+    html = style() + "<h2>Products</h2>"
 
-    items = []
-    try:
-        if products_col is not None:
-            items = list(products_col.find())
-    except:
-        items = []
-
-    for p in items:
+    for p in products_col.find():
         html += f"""
-        <div style='text-align:center;border:1px solid #ccc;margin:10px;padding:10px'>
-            <img src="{p.get('media','')}" width="150"><br>
-            <b>{p.get('name','')}</b><br>
-            {p.get('price','')}৳<br><br>
+        <div class='card'>
+            <h3>{p['name']}</h3>
+            <p>💰 {p['price']}৳</p>
 
             <form action='/add_to_cart' method='POST'>
-                <input type='hidden' name='id' value='{p.get("id")}'>
+                <input type='hidden' name='id' value='{p['id']}'>
                 <button>Add to Cart</button>
             </form>
+
+            <br>
+            <a href='/order/{p['id']}'>Order Now</a>
         </div>
         """
 
@@ -69,76 +63,84 @@ def products():
 # ===== ADD TO CART =====
 @app.route('/add_to_cart', methods=['POST'])
 def add_to_cart():
-    pid = request.form.get("id")
+    pid = request.form['id']
 
     cart = session.get('cart', [])
-
-    if not isinstance(cart, list):
-        cart = []
-
-    cart.append({"id": pid, "qty": 1})
+    cart.append(pid)
     session['cart'] = cart
 
     return redirect('/cart')
 
-# ===== CART (FIXED 100%) =====
+# ===== CART =====
 @app.route('/cart')
 def cart():
-    try:
-        cart = session.get('cart', [])
+    html = style() + "<h2>Cart</h2>"
+    cart = session.get('cart', [])
 
-        if not isinstance(cart, list):
-            session['cart'] = []
-            return "<h2 style='text-align:center'>Cart reset</h2>"
+    total = 0
 
-        html = "<h2 style='text-align:center'>Cart</h2>"
-        total = 0
-
-        for item in cart:
-            p = None
-
-            try:
-                if products_col is not None:
-                    p = products_col.find_one({"id": item.get("id")})
-            except:
-                p = None
-
-            if not p:
-                continue
-
-            try:
-                price = int(p.get("price", 0))
-            except:
-                price = 0
-
-            qty = item.get("qty", 1)
-
-            total += price * qty
+    for pid in cart:
+        p = products_col.find_one({"id": pid})
+        if p:
+            price = int(p['price'])
+            total += price
 
             html += f"""
-            <div style='text-align:center'>
-                {p.get('name','')} x {qty} = {price*qty}৳
-            </div><hr>
+            <div class='card'>
+                {p['name']} - {price}৳
+                <br>
+                <a href='/order/{pid}'>Order This</a>
+            </div>
             """
 
-        html += f"<h3 style='text-align:center'>Total: {total}৳</h3>"
+    html += f"<h3>Total: {total}৳</h3>"
 
-        if total == 0:
-            html += "<p style='text-align:center'>Cart empty</p>"
+    if not cart:
+        html += "<p>Cart Empty</p>"
 
-        html += "<div style='text-align:center'><a href='/'>Back</a></div>"
+    return html
 
-        return html
+# ===== ORDER PAGE =====
+@app.route('/order/<pid>')
+def order(pid):
+    p = products_col.find_one({"id": pid})
+    if not p:
+        return "Not found"
 
-    except Exception as e:
-        return f"<h2 style='color:red;text-align:center'>Cart Error Fixed</h2><p>{str(e)}</p>"
+    return style() + f"""
+    <h2>Order: {p['name']}</h2>
 
-# ===== ADMIN =====
+    <form action='/place_order/{pid}' method='POST'>
+        <input name='name' placeholder='Name'><br>
+        <input name='phone' placeholder='Phone'><br>
+        <input name='address' placeholder='Address'><br>
+        <button>Confirm Order</button>
+    </form>
+    """
+
+# ===== PLACE ORDER =====
+@app.route('/place_order/<pid>', methods=['POST'])
+def place_order(pid):
+    p = products_col.find_one({"id": pid})
+    if not p:
+        return "Error"
+
+    orders_col.insert_one({
+        "product": p['name'],
+        "name": request.form['name'],
+        "phone": request.form['phone'],
+        "address": request.form['address']
+    })
+
+    return style() + "<h2 style='color:green'>Order Successful</h2>"
+
+# ===== ADMIN LOGIN =====
 @app.route('/admin')
 def admin():
-    return """
+    return style() + """
+    <h2>Admin Login</h2>
     <form action='/dashboard' method='POST'>
-        <input name='pass' placeholder='Password'>
+        <input name='pass' placeholder='Password'><br>
         <button>Login</button>
     </form>
     """
@@ -146,35 +148,42 @@ def admin():
 # ===== DASHBOARD =====
 @app.route('/dashboard', methods=['POST'])
 def dashboard():
-    if request.form.get('pass') != ADMIN_PASSWORD:
+    if request.form['pass'] != ADMIN_PASS:
         return "Wrong password"
 
-    return """
+    html = style() + """
     <h2>Admin Panel</h2>
-    <form action='/add_product' method='POST' enctype='multipart/form-data'>
-        <input name='name' placeholder='Name'><br>
+
+    <h3>Add Product</h3>
+    <form action='/add_product' method='POST'>
+        <input name='name' placeholder='Product Name'><br>
         <input name='price' placeholder='Price'><br>
-        <input type='file' name='media'><br>
         <button>Add</button>
     </form>
+
+    <h3>Orders</h3>
     """
+
+    for o in orders_col.find():
+        html += f"""
+        <div class='card'>
+            Product: {o['product']}<br>
+            Name: {o['name']}<br>
+            Phone: {o['phone']}<br>
+            Address: {o['address']}
+        </div>
+        """
+
+    return html
 
 # ===== ADD PRODUCT =====
 @app.route('/add_product', methods=['POST'])
 def add_product():
-    try:
-        file = request.files.get('media')
-        upload = cloudinary.uploader.upload(file) if file else {}
-
-        if products_col is not None:
-            products_col.insert_one({
-                "id": str(uuid.uuid4()),
-                "name": request.form.get("name"),
-                "price": request.form.get("price"),
-                "media": upload.get("secure_url","")
-            })
-    except:
-        pass
+    products_col.insert_one({
+        "id": str(uuid.uuid4()),
+        "name": request.form['name'],
+        "price": request.form['price']
+    })
 
     return redirect('/products')
 
