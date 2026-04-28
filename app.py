@@ -6,75 +6,67 @@ from supabase import create_client
 app = Flask(__name__)
 app.secret_key = "secret123"
 
-# ================= SUPABASE =================
 SUPABASE_URL = "https://hjwgjopshptmhlkcdagh.supabase.co"
-
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-
-# Safety check (important for Render crash debug)
-if not SUPABASE_KEY:
-    raise Exception("❌ SUPABASE_KEY not found in environment variables")
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 ADMIN_PASSWORD = "Tahmid1122"
 
-# ================= HOME =================
+# HOME
 @app.route("/")
 def home():
     products = supabase.table("products").select("*").execute().data or []
+    orders = session.get("orders", [])
+    cart = session.get("cart", [])
+    return render_template("index.html", products=products, cart=cart, orders=orders)
 
-    cart_ids = session.get("cart", [])
-    cart_items = []
-
-    for pid in cart_ids:
-        res = supabase.table("products").select("*").eq("id", pid).execute()
-        if res.data:
-            cart_items.append(res.data[0])
-
-    return render_template("index.html", products=products, cart_items=cart_items)
-
-# ================= ADD TO CART =================
+# ADD CART
 @app.route("/add/<int:pid>")
 def add(pid):
-    if "cart" not in session:
-        session["cart"] = []
-
-    session["cart"].append(int(pid))
-    session.modified = True
+    cart = session.get("cart", [])
+    cart.append(pid)
+    session["cart"] = cart
     return redirect("/")
 
-# ================= ORDER =================
+# PLACE ORDER
 @app.route("/order", methods=["POST"])
 def order():
     name = request.form.get("name")
     phone = request.form.get("phone")
-    address = request.form.get("address")
 
     cart = session.get("cart", [])
+    user_orders = session.get("orders", [])
 
     for pid in cart:
-        supabase.table("orders").insert({
-            "product_name": str(pid),
+        product = supabase.table("products").select("*").eq("id", pid).execute().data[0]
+
+        order_data = {
+            "product_name": product["name"],
             "customer_name": name,
             "phone": phone,
-            "address": address,
-            "quantity": 1
-        }).execute()
+            "status": "Order placed"
+        }
 
+        supabase.table("orders").insert(order_data).execute()
+        user_orders.append(order_data)
+
+    session["orders"] = user_orders
     session["cart"] = []
     return redirect("/")
 
-# ================= ADMIN =================
+# ADMIN LOGIN + PANEL
 @app.route("/admin", methods=["GET", "POST"])
 def admin():
     if request.method == "POST":
         if request.form.get("password") != ADMIN_PASSWORD:
-            return "Wrong Password"
+            return "Wrong password"
 
-    return render_template("admin.html")
+    products = supabase.table("products").select("*").execute().data or []
+    orders = supabase.table("orders").select("*").execute().data or []
+    return render_template("admin.html", products=products, orders=orders)
 
-# ================= ADD PRODUCT =================
+# ADD PRODUCT
 @app.route("/add_product", methods=["POST"])
 def add_product():
     name = request.form["name"]
@@ -82,7 +74,6 @@ def add_product():
     file = request.files["image"]
 
     filename = str(uuid.uuid4()) + file.filename
-
     supabase.storage.from_("products").upload(filename, file.read())
 
     image_url = supabase.storage.from_("products").get_public_url(filename)
@@ -95,6 +86,11 @@ def add_product():
 
     return redirect("/admin")
 
-# ================= RUN =================
+# UPDATE ORDER STATUS
+@app.route("/update_order/<id>/<status>")
+def update_order(id, status):
+    supabase.table("orders").update({"status": status}).eq("id", id).execute()
+    return redirect("/admin")
+
 if __name__ == "__main__":
     app.run()
