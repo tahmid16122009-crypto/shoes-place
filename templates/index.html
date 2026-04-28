@@ -1,51 +1,56 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>My Shop</title>
+    <title>Shop</title>
+    <style>
+        body { font-family: Arial; margin:0; }
+        .header { padding:10px; background:#ff6600; color:white; }
+        .search { width:100%; padding:10px; }
+        .product { border:1px solid #ddd; margin:10px; padding:10px; }
+        .bottom { position:fixed; bottom:0; width:100%; display:flex; background:#fff; border-top:1px solid #ccc; }
+        .bottom div { flex:1; text-align:center; padding:10px; }
+    </style>
 </head>
+
 <body>
 
-<h1>My Shop</h1>
+<div class="header">
+    <input class="search" placeholder="Search product...">
+</div>
 
-<h2>Products</h2>
+<h3>Products</h3>
 
 {% for p in products %}
-<div style="border:1px solid black; padding:10px; margin:10px;">
-    <h3>{{p.name}}</h3>
-    <img src="{{p.image}}" width="150"><br><br>
-    <b>Price:</b> {{p.price}}<br><br>
-
-    <!-- ✅ IMPORTANT FIX -->
+<div class="product">
+    <img src="{{p.image}}" width="100%">
+    <h4>{{p.name}}</h4>
+    <p>{{p.price}}</p>
     <a href="/add/{{p.id}}">Add to Cart</a>
 </div>
 {% endfor %}
 
-<hr>
-
-<h2>Cart</h2>
-
-{% for item in cart_items %}
-<div>
-    {{item.name}} - {{item.price}}
-</div>
+<h3>Cart</h3>
+{% for c in cart %}
+<p>Product ID: {{c}}</p>
 {% endfor %}
 
-<hr>
-
-<h2>Order</h2>
-
 <form action="/order" method="POST">
-    Name<br>
-    <input type="text" name="name"><br><br>
-
-    Phone<br>
-    <input type="text" name="phone"><br><br>
-
-    Address<br>
-    <input type="text" name="address"><br><br>
-
-    <button type="submit">Place Order</button>
+    <input name="name" placeholder="Name"><br>
+    <input name="phone" placeholder="Phone"><br>
+    <button>Place Order</button>
 </form>
+
+<h3>My Orders</h3>
+{% for o in orders %}
+<p>{{o.product_name}} - {{o.status}}</p>
+{% endfor %}
+
+<div class="bottom">
+    <div>Home</div>
+    <div>Cart</div>
+    <div>Ordered</div>
+    <div>Me</div>
+</div>
 
 </body>
 </html>
