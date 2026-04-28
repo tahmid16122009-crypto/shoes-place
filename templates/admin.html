@@ -1,0 +1,23 @@
+<h2>Admin Panel</h2>
+
+<form method="POST">
+    <input name="password" placeholder="Password">
+    <button>Login</button>
+</form>
+
+<h3>Add Product</h3>
+<form action="/add_product" method="POST" enctype="multipart/form-data">
+    <input name="name" placeholder="Name"><br>
+    <input name="price" placeholder="Price"><br>
+    <input type="file" name="image"><br>
+    <button>Add</button>
+</form>
+
+<h3>Orders</h3>
+{% for o in orders %}
+<p>
+{{o.product_name}} - {{o.customer_name}} - {{o.status}}
+<a href="/update_order/{{o.id}}/Order placed">✔</a>
+<a href="/update_order/{{o.id}}/Order cancelled">❌</a>
+</p>
+{% endfor %}
