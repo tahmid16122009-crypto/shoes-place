@@ -46,10 +46,9 @@ def products():
 
     q = request.args.get('q', "")
 
-    if products_col:
+    items = []
+    if products_col is not None:
         items = products_col.find()
-    else:
-        items = []
 
     for p in items:
         if q.lower() not in p.get("name","").lower():
@@ -71,7 +70,7 @@ def products():
 # ===== SINGLE PRODUCT =====
 @app.route('/product/<pid>')
 def product(pid):
-    if not products_col:
+    if products_col is None:
         return "DB Error"
 
     p = products_col.find_one({"id": pid})
@@ -120,7 +119,10 @@ def cart():
     total = 0
 
     for item in cart:
-        p = products_col.find_one({"id": item.get("id")}) if products_col else None
+        p = None
+        if products_col is not None:
+            p = products_col.find_one({"id": item.get("id")})
+
         if not p:
             continue
 
@@ -158,7 +160,7 @@ def checkout():
 def place_order():
     cart = session.get('cart', [])
 
-    if orders_col:
+    if orders_col is not None:
         orders_col.insert_one({
             "customer": request.form.to_dict(),
             "cart": cart
@@ -202,13 +204,14 @@ def add_product():
 
     upload = cloudinary.uploader.upload(file, resource_type="auto") if file else {}
 
-    products_col.insert_one({
-        "id": str(uuid.uuid4()),
-        "name": request.form.get("name"),
-        "price": request.form.get("price"),
-        "description": request.form.get("description"),
-        "media": upload.get("secure_url","")
-    })
+    if products_col is not None:
+        products_col.insert_one({
+            "id": str(uuid.uuid4()),
+            "name": request.form.get("name"),
+            "price": request.form.get("price"),
+            "description": request.form.get("description"),
+            "media": upload.get("secure_url","")
+        })
 
     return redirect('/products')
 
