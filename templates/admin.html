@@ -1,18 +1,11 @@
 <h2>Admin Dashboard</h2>
 
-<form action="/add_product" method="POST" enctype="multipart/form-data">
-    <input name="name" placeholder="Product Name"><br>
-    <input name="price" placeholder="Price"><br>
-    <input type="file" name="image"><br>
-    <button>Add Product</button>
-</form>
+<h3>Products</h3>
+{% for p in products %}
+<p>{{p.name}} - {{p.price}}</p>
+{% endfor %}
 
 <h3>Orders</h3>
-
 {% for o in orders %}
-<div>
-{{o.product_name}} - {{o.customer_name}} - {{o.status}}
-<a href="/update_order/{{o.id}}/Order placed">✔</a>
-<a href="/update_order/{{o.id}}/Order cancelled">❌</a>
-</div>
+<p>{{o.product_name}} - {{o.status}}</p>
 {% endfor %}
