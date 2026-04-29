@@ -2,10 +2,6 @@
 
 {% for o in orders %}
 <div>
-  {{o.product_name}} <br>
-  Status: {{o.status}}
+{{o.product_name}} - {{o.status}}
 </div>
-<hr>
 {% endfor %}
-
-<a href="/home">Back</a>
