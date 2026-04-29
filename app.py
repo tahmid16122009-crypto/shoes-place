@@ -22,8 +22,8 @@ ADMIN_PASSWORD = "Tahmid1122"
 def home():
     try:
         products = supabase.table("products").select("*").execute().data or []
-    except Exception as e:
-        return f"Supabase error: {e}"
+    except:
+        products = []
 
     cart_ids = session.get("cart", [])
     cart_items = []
@@ -47,12 +47,14 @@ def home():
 @app.route("/add/<int:pid>")
 def add(pid):
     cart = session.get("cart", [])
+
     if pid not in cart:
         cart.append(pid)
+
     session["cart"] = cart
     return redirect("/")
 
-# ================= PLACE ORDER =================
+# ================= ORDER =================
 @app.route("/order", methods=["POST"])
 def order():
     name = request.form.get("name")
@@ -65,6 +67,7 @@ def order():
     for pid in cart:
         try:
             product = supabase.table("products").select("*").eq("id", pid).execute().data
+
             if product:
                 product = product[0]
 
@@ -73,6 +76,7 @@ def order():
                     "customer_name": name,
                     "phone": phone,
                     "address": address,
+                    "quantity": 1,
                     "status": "Order placed"
                 }
 
@@ -91,8 +95,7 @@ def order():
 @app.route("/admin", methods=["GET", "POST"])
 def admin():
     if request.method == "POST":
-        password = request.form.get("password")
-        if password == ADMIN_PASSWORD:
+        if request.form.get("password") == ADMIN_PASSWORD:
             session["admin"] = True
             return redirect("/admin/dashboard")
         else:
@@ -147,7 +150,7 @@ def add_product():
     except Exception as e:
         return f"ADD PRODUCT ERROR: {e}"
 
-# ================= UPDATE ORDER =================
+# ================= UPDATE ORDER STATUS =================
 @app.route("/update_order/<int:oid>/<status>")
 def update_order(oid, status):
     if not session.get("admin"):
@@ -156,7 +159,6 @@ def update_order(oid, status):
     try:
         supabase.table("orders").update({"status": status}).eq("id", oid).execute()
         return redirect("/admin/dashboard")
-
     except Exception as e:
         return f"UPDATE ERROR: {e}"
 
