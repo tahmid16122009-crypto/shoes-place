@@ -52,7 +52,7 @@ def add(pid):
     session["cart"] = cart
     return redirect("/")
 
-# ================= ORDER =================
+# ================= PLACE ORDER =================
 @app.route("/order", methods=["POST"])
 def order():
     name = request.form.get("name")
@@ -78,11 +78,13 @@ def order():
 
                 supabase.table("orders").insert(order_data).execute()
                 user_orders.append(order_data)
+
         except Exception as e:
             return f"Order error: {e}"
 
     session["orders"] = user_orders
     session["cart"] = []
+
     return redirect("/")
 
 # ================= ADMIN LOGIN =================
@@ -124,6 +126,7 @@ def add_product():
     try:
         name = request.form.get("name")
         price = request.form.get("price")
+        description = request.form.get("description")
         file = request.files.get("image")
 
         if file:
@@ -135,6 +138,7 @@ def add_product():
             supabase.table("products").insert({
                 "name": name,
                 "price": price,
+                "description": description,
                 "image": image_url
             }).execute()
 
@@ -152,8 +156,15 @@ def update_order(oid, status):
     try:
         supabase.table("orders").update({"status": status}).eq("id", oid).execute()
         return redirect("/admin/dashboard")
+
     except Exception as e:
         return f"UPDATE ERROR: {e}"
+
+# ================= LOGOUT =================
+@app.route("/admin/logout")
+def logout():
+    session.clear()
+    return redirect("/admin")
 
 # ================= RUN =================
 if __name__ == "__main__":
