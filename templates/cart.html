@@ -1,0 +1,12 @@
+<h2>Cart</h2>
+
+{% for i in items %}
+  <div>{{i.name}} - {{i.price}}</div>
+{% endfor %}
+
+<form action="/order" method="POST">
+  <input name="address" placeholder="Address">
+  <button>Place Order</button>
+</form>
+
+<a href="/home">Back</a>
