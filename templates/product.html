@@ -3,7 +3,13 @@
 <img src="{{p.image}}" width="100%">
 <h2>{{p.name}}</h2>
 <p>{{p.price}}৳</p>
+<p>{{p.description}}</p>
 
 <a href="/add/{{p.id}}">
 <button>Add to Cart</button>
 </a>
+
+<form action="/order" method="POST">
+<input name="address" placeholder="Address" required>
+<button>Order Now</button>
+</form>
