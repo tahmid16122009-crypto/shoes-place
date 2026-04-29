@@ -9,6 +9,8 @@ SUPABASE_URL = "https://hjwgjopshptmhlkcdagh.supabase.co"
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+ADMIN_PASSWORD = "Tahmid1122"
+
 # ---------- LOGIN ----------
 @app.route("/")
 def index():
@@ -73,23 +75,6 @@ def cart():
 
     return render_template("cart.html", items=items, total=total)
 
-@app.route("/inc/<int:pid>")
-def inc(pid):
-    cart = session.get("cart", {})
-    cart[str(pid)] += 1
-    session["cart"] = cart
-    return redirect("/cart")
-
-@app.route("/dec/<int:pid>")
-def dec(pid):
-    cart = session.get("cart", {})
-    if cart[str(pid)] > 1:
-        cart[str(pid)] -= 1
-    else:
-        cart.pop(str(pid))
-    session["cart"] = cart
-    return redirect("/cart")
-
 # ---------- ORDER ----------
 @app.route("/order", methods=["POST"])
 def order():
@@ -129,3 +114,28 @@ def orders():
 @app.route("/me")
 def me():
     return render_template("me.html", user=session.get("user"))
+
+# ================= ADMIN =================
+
+@app.route("/admin", methods=["GET", "POST"])
+def admin():
+    if request.method == "POST":
+        if request.form.get("password") == ADMIN_PASSWORD:
+            session["admin"] = True
+            return redirect("/admin/dashboard")
+        return "Wrong password"
+    return render_template("admin_login.html")
+
+@app.route("/admin/dashboard")
+def admin_dashboard():
+    if not session.get("admin"):
+        return redirect("/admin")
+
+    products = supabase.table("products").select("*").execute().data or []
+    orders = supabase.table("orders").select("*").execute().data or []
+
+    return render_template("admin.html", products=products, orders=orders)
+
+# ---------- RUN ----------
+if __name__ == "__main__":
+    app.run(debug=True)
