@@ -1,0 +1,10 @@
+<h2>Profile</h2>
+
+{% if user %}
+<p>Name: {{user.name}}</p>
+<p>Phone: {{user.phone}}</p>
+{% else %}
+<p>No user logged in</p>
+{% endif %}
+
+<a href="/home">Back</a>
