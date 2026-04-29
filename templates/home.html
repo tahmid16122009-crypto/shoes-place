@@ -1,41 +1,68 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Home</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Home</title>
+
+<style>
+body { font-family: Arial; margin:0; padding-bottom:70px; }
+
+.card {
+  border:1px solid #ddd;
+  margin:10px;
+  padding:10px;
+  border-radius:10px;
+}
+
+img { width:100%; border-radius:10px; }
+
+button {
+  width:100%;
+  padding:10px;
+  background:#ff6f00;
+  color:white;
+  border:none;
+  margin-top:5px;
+}
+
+/* FIXED NAV */
+.nav {
+  position:fixed;
+  bottom:0;
+  width:100%;
+  background:white;
+  display:flex;
+  justify-content:space-around;
+  border-top:1px solid #ccc;
+}
+
+.nav a {
+  padding:10px;
+  text-decoration:none;
+  color:black;
+}
+</style>
 </head>
+
 <body>
 
-<h2>Products</h2>
+<h3 style="text-align:center;">My Shop</h3>
 
 {% for p in products %}
-<div style="border:1px solid #ccc;margin:10px;padding:10px">
-  <img src="{{p.image}}" width="120"><br>
-  <b>{{p.name}}</b><br>
-  {{p.price}}<br>
-
-  <a href="/add/{{p.id}}">Add to Cart</a>
+<div class="card">
+<img src="{{p.image}}">
+<h4>{{p.name}}</h4>
+<p>{{p.price}}</p>
+<a href="/add/{{p.id}}"><button>Add to Cart</button></a>
 </div>
 {% endfor %}
 
-<hr>
-
-<h3>Cart</h3>
-{% for c in cart_items %}
-  <div>{{c.name}}</div>
-{% endfor %}
-
-<hr>
-
-<form action="/order" method="POST">
-  <input name="address" placeholder="Address">
-  <button>Place Order</button>
-</form>
-
-<hr>
-
-<a href="/cart">Cart</a> |
-<a href="/orders">Orders</a> |
+<div class="nav">
+<a href="/home">Home</a>
+<a href="/cart">Cart</a>
+<a href="/orders">Orders</a>
 <a href="/me">Me</a>
+</div>
 
 </body>
 </html>
