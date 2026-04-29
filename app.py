@@ -9,9 +9,7 @@ SUPABASE_URL = "https://hjwgjopshptmhlkcdagh.supabase.co"
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-ADMIN_PASSWORD = "Tahmid1122"
-
-# -------- LOGIN --------
+# ---------- LOGIN ----------
 @app.route("/")
 def index():
     if not session.get("user"):
@@ -28,10 +26,10 @@ def login():
 
 @app.route("/skip")
 def skip():
-    session["user"] = {"name": "Guest", "phone": "000"}
+    session["user"] = None
     return redirect("/home")
 
-# -------- HOME + SEARCH --------
+# ---------- HOME ----------
 @app.route("/home")
 def home():
     q = request.args.get("q", "")
@@ -42,7 +40,7 @@ def home():
 
     return render_template("home.html", products=products, q=q)
 
-# -------- PRODUCT DETAILS --------
+# ---------- PRODUCT ----------
 @app.route("/product/<int:pid>")
 def product(pid):
     data = supabase.table("products").select("*").eq("id", pid).execute().data
@@ -50,7 +48,7 @@ def product(pid):
         return "Product not found"
     return render_template("product.html", p=data[0])
 
-# -------- CART --------
+# ---------- CART ----------
 @app.route("/add/<int:pid>")
 def add(pid):
     cart = session.get("cart", {})
@@ -92,7 +90,7 @@ def dec(pid):
     session["cart"] = cart
     return redirect("/cart")
 
-# -------- ORDER --------
+# ---------- ORDER ----------
 @app.route("/order", methods=["POST"])
 def order():
     user = session.get("user")
@@ -104,8 +102,8 @@ def order():
             p = product[0]
             supabase.table("orders").insert({
                 "product_name": p["name"],
-                "customer_name": user["name"],
-                "phone": user["phone"],
+                "customer_name": user["name"] if user else "Guest",
+                "phone": user["phone"] if user else "000",
                 "address": request.form.get("address"),
                 "quantity": qty,
                 "status": "Order placed"
@@ -114,15 +112,20 @@ def order():
     session["cart"] = {}
     return redirect("/orders")
 
-# -------- ORDERS --------
+# ---------- ORDERS ----------
 @app.route("/orders")
 def orders():
     user = session.get("user")
     data = supabase.table("orders").select("*").execute().data or []
-    my = [o for o in data if o["phone"] == user["phone"]]
+
+    if user:
+        my = [o for o in data if o["phone"] == user["phone"]]
+    else:
+        my = []
+
     return render_template("orders.html", orders=my)
 
-# -------- ME --------
+# ---------- ME ----------
 @app.route("/me")
 def me():
     return render_template("me.html", user=session.get("user"))
