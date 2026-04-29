@@ -1,3 +1,12 @@
-<h2>Profile</h2>
-<p>Name: {{user.name}}</p>
-<p>Phone: {{user.phone}}</p>
+{% if user %}
+<h2>My Profile</h2>
+<p>{{user.name}}</p>
+<p>{{user.phone}}</p>
+{% else %}
+<h2>Login</h2>
+<form action="/login" method="POST">
+<input name="name" placeholder="Name" required>
+<input name="phone" placeholder="Phone" required>
+<button>Login</button>
+</form>
+{% endif %}
