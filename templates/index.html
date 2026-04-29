@@ -2,63 +2,55 @@
 <html>
 <head>
   <title>Shop</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body{margin:0;font-family:Arial;background:#f5f5f5}
-    .header{background:#ff6600;padding:10px}
-    .search{width:100%;padding:10px;border:none;border-radius:6px}
-    .product{background:#fff;margin:10px;padding:10px;border-radius:8px}
-    img{width:100%;border-radius:6px}
-    .btn{background:#ff6600;color:#fff;padding:8px;border-radius:6px;text-decoration:none;display:inline-block;margin-top:5px}
-    .bottom{position:fixed;bottom:0;width:100%;display:flex;background:#fff;border-top:1px solid #ccc}
-    .bottom div{flex:1;text-align:center;padding:10px}
-  </style>
 </head>
-
 <body>
 
-<div class="header">
-  <input class="search" placeholder="Search product...">
-</div>
-
-<h3 style="margin-left:10px">Products</h3>
-
-{% for p in products %}
-<div class="product">
-  <img src="{{p.image}}">
-  <b>{{p.name}}</b><br>
-  {{p.price}}<br>
-  <a class="btn" href="/add/{{p.id}}">Add to Cart</a>
-</div>
-{% endfor %}
-
-<h3 style="margin-left:10px">Cart</h3>
-{% for c in cart_items %}
-<div class="product">
-  {{c.name}} - {{c.price}}
-</div>
-{% endfor %}
-
-<form action="/order" method="POST" class="product">
-  <input name="name" placeholder="Name" required><br>
-  <input name="phone" placeholder="Phone" required><br>
-  <input name="address" placeholder="Address"><br>
-  <button class="btn">Place Order</button>
+{% if not user %}
+<h3>Login</h3>
+<form action="/login" method="POST">
+  <input name="name" placeholder="Name">
+  <input name="phone" placeholder="Phone">
+  <button>Login</button>
 </form>
 
-<h3 style="margin-left:10px">My Orders</h3>
-{% for o in orders %}
-<div class="product">
-  {{o.product_name}} - {{o.status}}
-</div>
+<form action="/login" method="POST">
+  <input type="hidden" name="name" value="Guest">
+  <input type="hidden" name="phone" value="000">
+  <button>Skip</button>
+</form>
+{% else %}
+<p>Welcome {{user.name}}</p>
+{% endif %}
+
+<hr>
+
+<h2>Products</h2>
+
+{% for p in products %}
+  <div>
+    <img src="{{p.image}}" width="120"><br>
+    {{p.name}} - {{p.price}}<br>
+    <a href="/add/{{p.id}}">Add to cart</a>
+  </div>
+  <hr>
 {% endfor %}
 
-<div class="bottom">
-  <div>Home</div>
-  <div>Cart</div>
-  <div>Ordered</div>
-  <div>Me</div>
-</div>
+<h2>Cart</h2>
+{% for c in cart_items %}
+  <div>{{c.name}}</div>
+{% endfor %}
+
+<form action="/order" method="POST">
+  <input name="address" placeholder="Address">
+  <button>Place Order</button>
+</form>
+
+<h2>Orders</h2>
+{% for o in orders %}
+  <div>
+    {{o.product_name}} - {{o.status}}
+  </div>
+{% endfor %}
 
 </body>
 </html>
