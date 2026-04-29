@@ -1,43 +1,21 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Admin Panel</title>
-</head>
-<body>
+<h2>Admin Panel</h2>
 
-<h2>Add Product</h2>
-
-<form action="/add_product" method="POST" enctype="multipart/form-data">
-  <input name="name" placeholder="Name"><br>
-  <input name="price" placeholder="Price"><br>
-  <input name="description" placeholder="Description"><br>
-  <input type="file" name="image"><br>
-  <button>Add</button>
+<h3>Add Product</h3>
+<form method="POST" action="/add_product">
+<input name="name" placeholder="Name"><br>
+<input name="price" placeholder="Price"><br>
+<input name="image" placeholder="Image URL"><br>
+<input name="description" placeholder="Description"><br>
+<button>Add</button>
 </form>
 
 <hr>
 
-<h2>Products</h2>
+<h3>Products</h3>
 {% for p in products %}
-  <div>
-    <img src="{{p.image}}" width="100"><br>
-    {{p.name}} - {{p.price}}
-  </div>
-  <hr>
+<div>
+{{p.name}} - {{p.price}}
+<a href="/edit_product/{{p.id}}">Edit</a>
+<a href="/delete_product/{{p.id}}">Delete</a>
+</div>
 {% endfor %}
-
-<h2>Orders</h2>
-{% for o in orders %}
-  <div>
-    {{o.product_name}} <br>
-    {{o.customer_name}} <br>
-    {{o.status}} <br>
-
-    <a href="/update_order/{{o.id}}/Order placed">✔</a>
-    <a href="/update_order/{{o.id}}/Order cancelled">❌</a>
-  </div>
-  <hr>
-{% endfor %}
-
-</body>
-</html>
