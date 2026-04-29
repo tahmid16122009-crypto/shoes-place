@@ -1,59 +1,15 @@
-<!DOCTYPE html>
-<html>
-<head>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Home</title>
 
-<style>
-body { font-family: Arial; margin:0; padding-bottom:70px; }
-
-.card {
-  border:1px solid #ddd;
-  margin:10px;
-  padding:10px;
-  border-radius:10px;
-}
-
-img { width:100%; border-radius:10px; }
-
-button {
-  width:100%;
-  padding:10px;
-  background:#ff6f00;
-  color:white;
-  border:none;
-  margin-top:5px;
-}
-
-/* FIXED NAV */
-.nav {
-  position:fixed;
-  bottom:0;
-  width:100%;
-  background:white;
-  display:flex;
-  justify-content:space-around;
-  border-top:1px solid #ccc;
-}
-
-.nav a {
-  padding:10px;
-  text-decoration:none;
-  color:black;
-}
-</style>
-</head>
-
-<body>
-
-<h3 style="text-align:center;">My Shop</h3>
+<form>
+<input name="q" value="{{q}}" placeholder="Search..." style="width:100%;padding:10px">
+</form>
 
 {% for p in products %}
-<div class="card">
-<img src="{{p.image}}">
-<h4>{{p.name}}</h4>
-<p>{{p.price}}</p>
-<a href="/add/{{p.id}}"><button>Add to Cart</button></a>
+<div style="padding:10px;border:1px solid #ddd;margin:10px">
+<img src="{{p.image}}" width="100%">
+<h3>{{p.name}}</h3>
+<p>{{p.price}}৳</p>
+<a href="/product/{{p.id}}">View</a>
 </div>
 {% endfor %}
 
@@ -63,6 +19,3 @@ button {
 <a href="/orders">Orders</a>
 <a href="/me">Me</a>
 </div>
-
-</body>
-</html>
