@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Home</title>
+</head>
+<body>
+
+<h2>Products</h2>
+
+{% for p in products %}
+<div style="border:1px solid #ccc;margin:10px;padding:10px">
+  <img src="{{p.image}}" width="120"><br>
+  <b>{{p.name}}</b><br>
+  {{p.price}}<br>
+
+  <a href="/add/{{p.id}}">Add to Cart</a>
+</div>
+{% endfor %}
+
+<hr>
+
+<h3>Cart</h3>
+{% for c in cart_items %}
+  <div>{{c.name}}</div>
+{% endfor %}
+
+<hr>
+
+<form action="/order" method="POST">
+  <input name="address" placeholder="Address">
+  <button>Place Order</button>
+</form>
+
+<hr>
+
+<a href="/cart">Cart</a> |
+<a href="/orders">Orders</a> |
+<a href="/me">Me</a>
+
+</body>
+</html>
