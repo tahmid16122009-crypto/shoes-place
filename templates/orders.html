@@ -1,0 +1,11 @@
+<h2>My Orders</h2>
+
+{% for o in orders %}
+<div>
+  {{o.product_name}} <br>
+  Status: {{o.status}}
+</div>
+<hr>
+{% endfor %}
+
+<a href="/home">Back</a>
