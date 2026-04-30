@@ -1,4 +1,4 @@
-import os
+import os, time
 from flask import Flask, render_template, request, redirect, session
 from supabase import create_client
 
@@ -43,7 +43,7 @@ def home():
 def product(pid):
     data = supabase.table("products").select("*").eq("id", pid).execute().data
     if not data:
-        return "Not found"
+        return "Product not found"
     return render_template("product.html", p=data[0])
 
 # ---------- CART ----------
@@ -57,8 +57,7 @@ def add(pid):
 @app.route("/cart")
 def cart():
     cart = session.get("cart", {})
-    items = []
-    total = 0
+    items, total = [], 0
 
     for pid, qty in cart.items():
         r = supabase.table("products").select("*").eq("id", int(pid)).execute()
@@ -124,7 +123,7 @@ def admin_dashboard():
     products = supabase.table("products").select("*").execute().data or []
     return render_template("admin.html", products=products)
 
-# ---------- ADD PRODUCT (SAFE UPLOAD) ----------
+# ---------- ADD PRODUCT (UPLOAD FIXED) ----------
 @app.route("/add_product", methods=["POST"])
 def add_product():
     if not session.get("admin"):
@@ -135,21 +134,31 @@ def add_product():
     description = request.form.get("description")
 
     file = request.files.get("image")
+    image_url = ""
 
-    # 👉 যদি file না থাকে (link দিলে crash না করে)
     if file and file.filename != "":
-        filename = file.filename
-        path = f"products/{filename}"
-        supabase.storage.from_("products").upload(path, file.read())
-        image_url = f"{SUPABASE_URL}/storage/v1/object/public/{path}"
-    else:
-        image_url = ""
+        try:
+            # unique filename (duplicate fix)
+            filename = str(int(time.time())) + "_" + file.filename
+            path = f"products/{filename}"
 
-    supabase.table("products").insert({
-        "name": name,
-        "price": price,
-        "image": image_url,
-        "description": description
-    }).execute()
+            supabase.storage.from_("products").upload(path, file.read())
+
+            image_url = f"{SUPABASE_URL}/storage/v1/object/public/{path}"
+        except Exception as e:
+            return "UPLOAD ERROR: " + str(e)
+
+    try:
+        supabase.table("products").insert({
+            "name": name,
+            "price": price,
+            "image": image_url,
+            "description": description
+        }).execute()
+    except Exception as e:
+        return "DB ERROR: " + str(e)
 
     return redirect("/admin/dashboard")
+
+if __name__ == "__main__":
+    app.run(debug=True)
