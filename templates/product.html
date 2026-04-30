@@ -1,14 +1,68 @@
-<a href="/home">⬅ Back</a>
+{% extends "base.html" %}
+{% block content %}
+
+<img src="{{p.image}}" style="width:100%;max-height:300px;object-fit:cover;border-radius:10px">
 
 <h2>{{p.name}}</h2>
-
-<img src="{{p.image}}" style="width:100%;max-width:300px;border-radius:10px">
-
 <p>{{p.description}}</p>
-<p>{{p.price}}৳</p>
+<h3>{{p.price}}৳</h3>
 
 <a href="/add/{{p.id}}">
-<button style="background:#87CEFA;padding:12px;width:100%;border:none;border-radius:8px">
-Add to Cart
-</button>
+<button class="btn">Add to Cart</button>
 </a>
+
+<button class="btn" onclick="showForm()">Order Now</button>
+
+<!-- ORDER FORM -->
+<div id="formBox" style="display:none;margin-top:10px">
+
+<form method="POST" action="/order">
+
+<input name="name" placeholder="Name" class="btn"><br>
+<input name="phone" placeholder="Phone number" class="btn"><br>
+
+<select id="district" name="district" class="btn"></select>
+<select id="union" name="union" class="btn"></select>
+
+<input name="address" placeholder="Village / Street / House" class="btn">
+
+<button class="btn">Confirm Order</button>
+
+</form>
+
+</div>
+
+<script>
+function showForm(){
+    document.getElementById("formBox").style.display="block";
+}
+
+/* DISTRICT + UNION DATA */
+const data = {
+"Dhaka":["Dhamrai","Savar"],
+"Chittagong":["Patiya","Raozan"],
+"Rajshahi":["Bagha","Paba"]
+};
+
+let district = document.getElementById("district");
+let union = document.getElementById("union");
+
+for(let d in data){
+    let opt = document.createElement("option");
+    opt.value = d;
+    opt.innerHTML = d;
+    district.appendChild(opt);
+}
+
+district.onchange = function(){
+    union.innerHTML="";
+    data[this.value].forEach(u=>{
+        let o = document.createElement("option");
+        o.value = u;
+        o.innerHTML = u;
+        union.appendChild(o);
+    });
+};
+</script>
+
+{% endblock %}
