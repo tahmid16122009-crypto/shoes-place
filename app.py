@@ -139,12 +139,12 @@ def add_product():
     if file and file.filename != "":
         try:
             # unique filename (duplicate fix)
-            filename = str(int(time.time())) + "_" + file.filename
-            path = f"products/{filename}"
+            filename = str(int(time.time())) + "_" + filename = str(int(time.time())) + "_" + file.filename
+path = f"{filename}"
 
-            supabase.storage.from_("products").upload(path, file.read())
+supabase.storage.from_("products").upload(path, file.read())
 
-            image_url = f"{SUPABASE_URL}/storage/v1/object/public/products/{filename}"
+image_url = f"{SUPABASE_URL}/storage/v1/object/public/products/{filename}"
         except Exception as e:
             return "UPLOAD ERROR: " + str(e)
 
