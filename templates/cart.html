@@ -1,16 +1,17 @@
-<a href="/home">⬅ Back</a>
+{% extends "base.html" %}
+{% block content %}
 
-<h1>Cart</h1>
+<h2>Cart</h2>
 
 {% for i in items %}
 <div style="margin:10px;font-size:18px">
-{{i.name}} ({{i.qty}})
+{{i.name}} x {{i.qty}}
 </div>
 {% endfor %}
 
 <form method="POST" action="/order">
-<input name="address" placeholder="Address" style="width:100%;padding:12px">
-<button style="background:#87CEFA;width:100%;padding:14px;margin-top:10px">
-Order
-</button>
+<input name="address" placeholder="Address" class="btn">
+<button class="btn">Place Order</button>
 </form>
+
+{% endblock %}
