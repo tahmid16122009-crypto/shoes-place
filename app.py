@@ -144,7 +144,7 @@ def add_product():
 
             supabase.storage.from_("products").upload(path, file.read())
 
-            image_url = f"{SUPABASE_URL}/storage/v1/object/public/{path}"
+            image_url = f"{SUPABASE_URL}/storage/v1/object/public/products/{filename}"
         except Exception as e:
             return "UPLOAD ERROR: " + str(e)
 
