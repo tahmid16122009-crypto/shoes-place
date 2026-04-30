@@ -1,12 +1,17 @@
-<a href="/home">⬅ Back</a>
+{% extends "base.html" %}
+{% block content %}
 
 {% if user %}
-<h1>{{user.name}}</h1>
+<h2>{{user.name}}</h2>
 <p>{{user.phone}}</p>
 {% else %}
+
 <form method="POST" action="/login">
-<input name="name" placeholder="Name">
-<input name="phone" placeholder="Phone">
-<button style="background:skyblue;width:100%">Login</button>
+<input name="name" placeholder="Name" class="btn">
+<input name="phone" placeholder="Phone" class="btn">
+<button class="btn">Login</button>
 </form>
+
 {% endif %}
+
+{% endblock %}
