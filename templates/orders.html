@@ -1,9 +1,12 @@
-<a href="/home">⬅ Back</a>
+{% extends "base.html" %}
+{% block content %}
 
-<h1 style="font-size:28px">Orders</h1>
+<h2>Orders</h2>
 
 {% for o in orders %}
-<div style="font-size:20px">
+<div style="margin:10px">
 {{o.product_name}} - {{o.status}}
 </div>
 {% endfor %}
+
+{% endblock %}
