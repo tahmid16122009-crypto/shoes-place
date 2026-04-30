@@ -5,5 +5,14 @@
 <input name="price" placeholder="Price"><br>
 <input type="file" name="image"><br>
 <input name="description" placeholder="Description"><br>
-<button style="background:skyblue">Add Product</button>
+<button style="background:skyblue;padding:10px;width:100%">Add Product</button>
 </form>
+
+<hr>
+
+{% for p in products %}
+<div style="margin:10px">
+<img src="{{p.image}}" width="80"><br>
+<b>{{p.name}}</b> - {{p.price}}
+</div>
+{% endfor %}
