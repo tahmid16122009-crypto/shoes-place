@@ -123,7 +123,7 @@ def admin_dashboard():
     products = supabase.table("products").select("*").execute().data or []
     return render_template("admin.html", products=products)
 
-# ---------- ADD PRODUCT (🔥 IMAGE FIXED) ----------
+# ---------- ADD PRODUCT (🔥 FINAL IMAGE FIX) ----------
 @app.route("/add_product", methods=["POST"])
 def add_product():
     if not session.get("admin"):
@@ -138,13 +138,16 @@ def add_product():
 
     if file and file.filename != "":
         try:
-            # unique filename (duplicate fix)
             filename = str(int(time.time())) + "_" + file.filename
 
-            # upload to Supabase (NO folder path)
-            supabase.storage.from_("products").upload(filename, file.read())
+            # Upload file to Supabase storage
+            supabase.storage.from_("products").upload(
+                filename,
+                file.read(),
+                {"content-type": file.content_type}
+            )
 
-            # ✅ FIXED URL (THIS IS THE MAIN FIX)
+            # ✅ Correct public URL (THIS FIXES IMAGE ISSUE)
             image_url = f"{SUPABASE_URL}/storage/v1/object/public/products/{filename}"
 
         except Exception as e:
