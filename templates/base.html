@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<style>
+body{
+    margin:0;
+    font-family:Arial;
+    background:#f0f8ff;
+}
+
+/* ZOOM OFF */
+html, body{
+    touch-action: manipulation;
+}
+
+/* CONTENT */
+.content{
+    padding:10px;
+    padding-bottom:90px;
+}
+
+/* BUTTON */
+.btn{
+    background:#87CEFA;
+    border:none;
+    padding:14px;
+    width:100%;
+    font-size:18px;
+    border-radius:10px;
+    margin-top:8px;
+}
+
+/* NAVBAR */
+.bottom{
+    position:fixed;
+    bottom:0;
+    width:100%;
+    background:white;
+    display:flex;
+    justify-content:space-around;
+    padding:12px 0;
+    border-top:1px solid #ccc;
+}
+
+.bottom a{
+    text-decoration:none;
+    font-size:16px;
+    font-weight:bold;
+    color:#333;
+}
+
+.bottom a:active{
+    color:#00aaff;
+}
+</style>
+</head>
+
+<body>
+
+<div class="content">
+{% block content %}{% endblock %}
+</div>
+
+<div class="bottom">
+<a href="/home">Home</a>
+<a href="/cart">Cart</a>
+<a href="/orders">Orders</a>
+<a href="/me">Me</a>
+</div>
+
+</body>
+</html>
