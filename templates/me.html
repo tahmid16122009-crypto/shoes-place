@@ -1,12 +1,12 @@
+<a href="/home">⬅ Back</a>
+
 {% if user %}
-<h2>My Profile</h2>
-<p>{{user.name}}</p>
+<h1>{{user.name}}</h1>
 <p>{{user.phone}}</p>
 {% else %}
-<h2>Login</h2>
-<form action="/login" method="POST">
-<input name="name" placeholder="Name" required>
-<input name="phone" placeholder="Phone" required>
-<button>Login</button>
+<form method="POST" action="/login">
+<input name="name" placeholder="Name" style="width:100%;padding:10px">
+<input name="phone" placeholder="Phone" style="width:100%;padding:10px">
+<button style="background:skyblue;width:100%;padding:12px">Login</button>
 </form>
 {% endif %}
