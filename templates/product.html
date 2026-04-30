@@ -1,15 +1,14 @@
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<a href="/home">⬅ Back</a>
 
-<img src="{{p.image}}" width="100%">
 <h2>{{p.name}}</h2>
-<p>{{p.price}}৳</p>
+
+<img src="{{p.image}}" style="width:100%;max-width:300px;border-radius:10px">
+
 <p>{{p.description}}</p>
+<p>{{p.price}}৳</p>
 
 <a href="/add/{{p.id}}">
-<button>Add to Cart</button>
+<button style="background:#87CEFA;padding:12px;width:100%;border:none;border-radius:8px">
+Add to Cart
+</button>
 </a>
-
-<form action="/order" method="POST">
-<input name="address" placeholder="Address" required>
-<button>Order Now</button>
-</form>
