@@ -1,17 +1,16 @@
-<h2>Cart</h2>
+<a href="/home">⬅ Back</a>
+
+<h1 style="font-size:28px">Cart</h1>
 
 {% for i in items %}
-<div>
-{{i.name}} ({{i.qty}})
-<a href="/inc/{{i.id}}">+</a>
-<a href="/dec/{{i.id}}">-</a>
-= {{i.subtotal}}৳
+<div style="font-size:20px;margin:10px 0">
+{{i.name}} ({{i.qty}} pcs)
 </div>
 {% endfor %}
 
-<h3>Total: {{total}}৳</h3>
+<h2>Total: {{total}}৳</h2>
 
 <form method="POST" action="/order">
-<input name="address" placeholder="Full Address" required>
-<button>Place Order</button>
+<input name="address" placeholder="Address" style="width:100%;padding:12px">
+<button style="background:skyblue;padding:12px;width:100%">Order</button>
 </form>
