@@ -42,6 +42,8 @@ def home():
 @app.route("/product/<int:pid>")
 def product(pid):
     data = supabase.table("products").select("*").eq("id", pid).execute().data
+    if not data:
+        return "Not found"
     return render_template("product.html", p=data[0])
 
 # ---------- CART ----------
@@ -122,26 +124,32 @@ def admin_dashboard():
     products = supabase.table("products").select("*").execute().data or []
     return render_template("admin.html", products=products)
 
-# ---------- ADD PRODUCT (UPLOAD IMAGE) ----------
+# ---------- ADD PRODUCT (SAFE UPLOAD) ----------
 @app.route("/add_product", methods=["POST"])
 def add_product():
     if not session.get("admin"):
         return redirect("/admin")
 
+    name = request.form.get("name")
+    price = request.form.get("price")
+    description = request.form.get("description")
+
     file = request.files.get("image")
 
-    filename = file.filename
-    file_path = f"products/{filename}"
-
-    supabase.storage.from_("products").upload(file_path, file.read())
-
-    image_url = f"{SUPABASE_URL}/storage/v1/object/public/{file_path}"
+    # 👉 যদি file না থাকে (link দিলে crash না করে)
+    if file and file.filename != "":
+        filename = file.filename
+        path = f"products/{filename}"
+        supabase.storage.from_("products").upload(path, file.read())
+        image_url = f"{SUPABASE_URL}/storage/v1/object/public/{path}"
+    else:
+        image_url = ""
 
     supabase.table("products").insert({
-        "name": request.form.get("name"),
-        "price": request.form.get("price"),
+        "name": name,
+        "price": price,
         "image": image_url,
-        "description": request.form.get("description")
+        "description": description
     }).execute()
 
     return redirect("/admin/dashboard")
