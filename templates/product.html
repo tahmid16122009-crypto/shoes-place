@@ -19,20 +19,20 @@
 <input name="phone" placeholder="Phone number" class="btn" required>
 
 <!-- DISTRICT -->
-<select id="district" name="district" class="btn" required></select>
+<select id="district" name="district" class="btn" required>
+<option>Select District</option>
+</select>
 
-<!-- UPAZILA (CLICK করলে show হবে) -->
+<!-- UPAZILA -->
 <select id="upazila" name="union" class="btn" required>
 <option>Select district first</option>
 </select>
 
-<!-- SEARCH -->
 <input type="text" id="searchUpazila" placeholder="Search Upazila" class="btn">
 
-<!-- ADDRESS -->
 <input name="village" placeholder="Village name" class="btn" required>
-<input name="road" placeholder="Road name (optional)" class="btn">
-<input name="holding" placeholder="Holding number (optional)" class="btn">
+<input name="road" placeholder="Road (optional)" class="btn">
+<input name="holding" placeholder="Holding (optional)" class="btn">
 
 <button class="btn">Confirm Order</button>
 
@@ -47,48 +47,66 @@ function showForm(){
 
 let districts = [];
 let upazilas = [];
+let dataLoaded = false;
 
 const districtBox = document.getElementById("district");
 const upazilaBox = document.getElementById("upazila");
 
-/* LOAD DISTRICT */
-fetch("https://bdapi.vercel.app/api/v.1/district")
-.then(res=>res.json())
-.then(data=>{
-    districts = data.data;
+/* 🔥 LOAD DATA */
+async function loadData(){
+    try{
+        let d = await fetch("https://bdapi.vercel.app/api/v.1/district").then(r=>r.json());
+        let u = await fetch("https://bdapi.vercel.app/api/v.1/upazila").then(r=>r.json());
 
+        districts = d.data;
+        upazilas = u.data;
+
+        dataLoaded = true;
+
+        renderDistrict(districts);
+    }catch(e){
+        console.log("API FAIL → using fallback");
+
+        /* fallback data */
+        districts = [
+            {name:"Dhaka"},
+            {name:"Chittagong"},
+            {name:"Sylhet"}
+        ];
+
+        upazilas = [
+            {name:"Savar", district:"Dhaka"},
+            {name:"Dhamrai", district:"Dhaka"},
+            {name:"Patiya", district:"Chittagong"},
+            {name:"Raozan", district:"Chittagong"},
+            {name:"Beanibazar", district:"Sylhet"}
+        ];
+
+        dataLoaded = true;
+        renderDistrict(districts);
+    }
+}
+
+/* DISTRICT RENDER */
+function renderDistrict(list){
     districtBox.innerHTML = "<option>Select District</option>";
 
-    districts.forEach(d=>{
+    list.forEach(d=>{
         let opt=document.createElement("option");
         opt.value=d.name;
         opt.innerText=d.name;
         districtBox.appendChild(opt);
     });
-});
+}
 
-/* LOAD UPAZILA (ONCE) */
-fetch("https://bdapi.vercel.app/api/v.1/upazila")
-.then(res=>res.json())
-.then(data=>{
-    upazilas = data.data;
-});
-
-/* DISTRICT CHANGE → LOAD UPAZILA */
-districtBox.onchange = function(){
-
-    let selected = this.value.toLowerCase();
-
-    let filtered = upazilas.filter(u =>
-        u.district.toLowerCase() === selected
-    );
-
-    renderUpazila(filtered);
-};
-
-/* RENDER FUNCTION */
+/* UPAZILA RENDER */
 function renderUpazila(list){
     upazilaBox.innerHTML = "";
+
+    if(list.length === 0){
+        upazilaBox.innerHTML = "<option>No data found</option>";
+        return;
+    }
 
     list.forEach(u=>{
         let opt=document.createElement("option");
@@ -98,6 +116,25 @@ function renderUpazila(list){
     });
 }
 
+/* DISTRICT CHANGE */
+districtBox.onchange = function(){
+
+    if(!dataLoaded){
+        alert("Loading data... wait একটু");
+        return;
+    }
+
+    let selected = this.value.toLowerCase();
+
+    let filtered = upazilas.filter(u =>
+        u.district && u.district.toLowerCase() === selected
+    );
+
+    console.log("Filtered:", filtered);
+
+    renderUpazila(filtered);
+};
+
 /* SEARCH */
 document.getElementById("searchUpazila").onkeyup = function(){
 
@@ -105,12 +142,17 @@ document.getElementById("searchUpazila").onkeyup = function(){
     let selected = districtBox.value.toLowerCase();
 
     let filtered = upazilas.filter(u =>
+        u.district &&
         u.district.toLowerCase() === selected &&
         u.name.toLowerCase().includes(val)
     );
 
     renderUpazila(filtered);
 };
+
+/* START */
+loadData();
+
 </script>
 
 {% endblock %}
