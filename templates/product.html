@@ -7,10 +7,6 @@
 <p>{{p.description}}</p>
 <h3>{{p.price}}৳</h3>
 
-<a href="/add/{{p.id}}">
-<button class="btn">Add to Cart</button>
-</a>
-
 <button class="btn" onclick="showForm()">Order Now</button>
 
 <div id="formBox" style="display:none;margin-top:10px">
@@ -20,19 +16,12 @@
 <input name="name" placeholder="Name" class="btn">
 <input name="phone" placeholder="Phone number" class="btn">
 
-<!-- 🔍 SEARCHABLE DISTRICT -->
-<input type="text" id="districtSearch" placeholder="Search District..." class="btn">
-
+<input id="districtSearch" placeholder="Search District" class="btn">
 <select id="district" name="district" class="btn"></select>
 
-<!-- 🔍 SEARCHABLE UNION -->
-<input type="text" id="unionSearch" placeholder="Search Area..." class="btn">
+<input id="unionSearch" placeholder="Search Area" class="btn">
+<select id="union" name="union" class="btn"></select>
 
-<select id="union" name="union" class="btn">
-<option>Select district first</option>
-</select>
-
-<!-- NEW FIELDS -->
 <input name="village" placeholder="Village name" class="btn">
 <input name="road" placeholder="Road name (optional)" class="btn">
 <input name="holding" placeholder="Holding number (optional)" class="btn">
@@ -48,84 +37,61 @@ function showForm(){
     document.getElementById("formBox").style.display="block";
 }
 
-const districtSelect = document.getElementById("district");
-const unionSelect = document.getElementById("union");
-
-const districtSearch = document.getElementById("districtSearch");
-const unionSearch = document.getElementById("unionSearch");
-
 let districts = [];
 let upazilas = [];
 
-/* 🔥 LOAD ALL DATA ONCE (FIX LOADING BUG) */
 fetch("https://bdapi.vercel.app/api/v.1/district")
-.then(res => res.json())
-.then(data => {
-    districts = data.data;
-    renderDistricts(districts);
+.then(res=>res.json())
+.then(d=>{
+    districts = d.data;
+    renderDistrict(districts);
 });
 
 fetch("https://bdapi.vercel.app/api/v.1/upazila")
-.then(res => res.json())
-.then(data => {
-    upazilas = data.data;
+.then(res=>res.json())
+.then(d=>{
+    upazilas = d.data;
 });
 
-/* 🎯 RENDER DISTRICT */
-function renderDistricts(list){
-    districtSelect.innerHTML = "";
-    list.forEach(d => {
-        let opt = document.createElement("option");
-        opt.value = d.name;
-        opt.innerHTML = d.name;
-        districtSelect.appendChild(opt);
+function renderDistrict(list){
+    let d = document.getElementById("district");
+    d.innerHTML="";
+    list.forEach(x=>{
+        let o=document.createElement("option");
+        o.value=x.name;
+        o.innerHTML=x.name;
+        d.appendChild(o);
     });
 }
 
-/* 🔍 DISTRICT SEARCH */
-districtSearch.addEventListener("keyup", function(){
-    let val = this.value.toLowerCase();
-    let filtered = districts.filter(d => d.name.toLowerCase().includes(val));
-    renderDistricts(filtered);
-});
+document.getElementById("districtSearch").onkeyup=function(){
+    let val=this.value.toLowerCase();
+    renderDistrict(districts.filter(x=>x.name.toLowerCase().includes(val)));
+}
 
-/* 🎯 DISTRICT CHANGE → LOAD UNION */
-districtSelect.addEventListener("change", function(){
+document.getElementById("district").onchange=function(){
+    let val=this.value.toLowerCase();
+    let list=upazilas.filter(x=>x.district.toLowerCase()==val);
+    renderUnion(list);
+}
 
-    let selected = this.value.toLowerCase();
-
-    let filtered = upazilas.filter(u => 
-        u.district.toLowerCase() === selected
-    );
-
-    renderUnions(filtered);
-});
-
-/* 🎯 RENDER UNION */
-function renderUnions(list){
-    unionSelect.innerHTML = "";
-    list.forEach(u => {
-        let opt = document.createElement("option");
-        opt.value = u.name;
-        opt.innerHTML = u.name;
-        unionSelect.appendChild(opt);
+function renderUnion(list){
+    let u=document.getElementById("union");
+    u.innerHTML="";
+    list.forEach(x=>{
+        let o=document.createElement("option");
+        o.value=x.name;
+        o.innerHTML=x.name;
+        u.appendChild(o);
     });
 }
 
-/* 🔍 UNION SEARCH */
-unionSearch.addEventListener("keyup", function(){
-
-    let val = this.value.toLowerCase();
-
-    let selected = districtSelect.value.toLowerCase();
-
-    let filtered = upazilas.filter(u =>
-        u.district.toLowerCase() === selected &&
-        u.name.toLowerCase().includes(val)
-    );
-
-    renderUnions(filtered);
-});
+document.getElementById("unionSearch").onkeyup=function(){
+    let val=this.value.toLowerCase();
+    let d=document.getElementById("district").value.toLowerCase();
+    let list=upazilas.filter(x=>x.district.toLowerCase()==d && x.name.toLowerCase().includes(val));
+    renderUnion(list);
+}
 </script>
 
 {% endblock %}
