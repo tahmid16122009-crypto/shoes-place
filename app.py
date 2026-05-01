@@ -50,17 +50,22 @@ def product(id):
 # =========================
 @app.route("/order", methods=["POST"])
 def order():
-    data = {
-        "name": session.get("user"),
-        "phone": session.get("phone"),
-        "district": request.form["district"],
-        "address": request.form["address"],
-        "product_id": request.form["product_id"],
-        "status": "pending"
-    }
+    try:
+        data = {
+            "name": session.get("user"),
+            "phone": session.get("phone"),
+            "district": request.form["district"],
+            "address": request.form["address"],
+            "product_id": request.form["product_id"],
+            "status": "pending"
+        }
 
-    supabase.table("orders").insert(data).execute()
-    return redirect(url_for("home"))
+        supabase.table("orders").insert(data).execute()
+
+        return redirect(url_for("home"))
+
+    except Exception as e:
+        return f"ORDER ERROR: {str(e)}"
 
 # =========================
 # ADMIN
