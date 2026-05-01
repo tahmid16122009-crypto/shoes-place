@@ -18,17 +18,17 @@
 <input name="name" placeholder="Name" class="btn" required>
 <input name="phone" placeholder="Phone number" class="btn" required>
 
-<!-- DISTRICT -->
-<select id="district" name="district" class="btn" required>
-<option>Select District</option>
-</select>
+<!-- DISTRICT SEARCH -->
+<input type="text" id="districtSearch" placeholder="Search District" class="btn">
 
-<!-- UPAZILA -->
+<select id="district" name="district" class="btn" required></select>
+
+<!-- UPAZILA SEARCH -->
+<input type="text" id="upazilaSearch" placeholder="Search Upazila" class="btn">
+
 <select id="upazila" name="union" class="btn" required>
 <option>Select district first</option>
 </select>
-
-<input type="text" id="searchUpazila" placeholder="Search Upazila" class="btn">
 
 <input name="village" placeholder="Village name" class="btn" required>
 <input name="road" placeholder="Road (optional)" class="btn">
@@ -40,119 +40,62 @@
 
 </div>
 
+<script src="/static/bd_data.js"></script>
+
 <script>
 function showForm(){
     document.getElementById("formBox").style.display="block";
 }
 
-let districts = [];
-let upazilas = [];
-let dataLoaded = false;
+let districtBox = document.getElementById("district");
+let upazilaBox = document.getElementById("upazila");
 
-const districtBox = document.getElementById("district");
-const upazilaBox = document.getElementById("upazila");
-
-/* 🔥 LOAD DATA */
-async function loadData(){
-    try{
-        let d = await fetch("https://bdapi.vercel.app/api/v.1/district").then(r=>r.json());
-        let u = await fetch("https://bdapi.vercel.app/api/v.1/upazila").then(r=>r.json());
-
-        districts = d.data;
-        upazilas = u.data;
-
-        dataLoaded = true;
-
-        renderDistrict(districts);
-    }catch(e){
-        console.log("API FAIL → using fallback");
-
-        /* fallback data */
-        districts = [
-            {name:"Dhaka"},
-            {name:"Chittagong"},
-            {name:"Sylhet"}
-        ];
-
-        upazilas = [
-            {name:"Savar", district:"Dhaka"},
-            {name:"Dhamrai", district:"Dhaka"},
-            {name:"Patiya", district:"Chittagong"},
-            {name:"Raozan", district:"Chittagong"},
-            {name:"Beanibazar", district:"Sylhet"}
-        ];
-
-        dataLoaded = true;
-        renderDistrict(districts);
-    }
-}
+/* LOAD DISTRICT */
+let districts = Object.keys(BD_DATA);
+renderDistrict(districts);
 
 /* DISTRICT RENDER */
 function renderDistrict(list){
-    districtBox.innerHTML = "<option>Select District</option>";
-
+    districtBox.innerHTML="";
     list.forEach(d=>{
         let opt=document.createElement("option");
-        opt.value=d.name;
-        opt.innerText=d.name;
+        opt.value=d;
+        opt.innerText=d;
         districtBox.appendChild(opt);
     });
 }
 
+/* DISTRICT SEARCH */
+document.getElementById("districtSearch").onkeyup=function(){
+    let val=this.value.toLowerCase();
+    let filtered=districts.filter(d=>d.toLowerCase().includes(val));
+    renderDistrict(filtered);
+}
+
+/* DISTRICT CHANGE */
+districtBox.onchange=function(){
+    let list = BD_DATA[this.value] || [];
+    renderUpazila(list);
+}
+
 /* UPAZILA RENDER */
 function renderUpazila(list){
-    upazilaBox.innerHTML = "";
-
-    if(list.length === 0){
-        upazilaBox.innerHTML = "<option>No data found</option>";
-        return;
-    }
-
+    upazilaBox.innerHTML="";
     list.forEach(u=>{
         let opt=document.createElement("option");
-        opt.value=u.name;
-        opt.innerText=u.name;
+        opt.value=u;
+        opt.innerText=u;
         upazilaBox.appendChild(opt);
     });
 }
 
-/* DISTRICT CHANGE */
-districtBox.onchange = function(){
-
-    if(!dataLoaded){
-        alert("Loading data... wait একটু");
-        return;
-    }
-
-    let selected = this.value.toLowerCase();
-
-    let filtered = upazilas.filter(u =>
-        u.district && u.district.toLowerCase() === selected
-    );
-
-    console.log("Filtered:", filtered);
-
-    renderUpazila(filtered);
-};
-
-/* SEARCH */
-document.getElementById("searchUpazila").onkeyup = function(){
-
-    let val = this.value.toLowerCase();
-    let selected = districtBox.value.toLowerCase();
-
-    let filtered = upazilas.filter(u =>
-        u.district &&
-        u.district.toLowerCase() === selected &&
-        u.name.toLowerCase().includes(val)
-    );
-
-    renderUpazila(filtered);
-};
-
-/* START */
-loadData();
-
+/* UPAZILA SEARCH */
+document.getElementById("upazilaSearch").onkeyup=function(){
+    let val=this.value.toLowerCase();
+    let d=districtBox.value;
+    let list=(BD_DATA[d] || []).filter(u=>u.toLowerCase().includes(val));
+    renderUpazila(list);
+}
 </script>
 
 {% endblock %}
