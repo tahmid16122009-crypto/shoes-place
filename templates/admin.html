@@ -1,18 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+
 <h2>Admin Panel</h2>
 
+<a href="/admin/orders"><button class="btn">View Orders</button></a>
+
+<hr>
+
 <form method="POST" action="/add_product" enctype="multipart/form-data">
-<input name="name" placeholder="Name"><br>
-<input name="price" placeholder="Price"><br>
-<input type="file" name="image"><br>
-<input name="description" placeholder="Description"><br>
-<button style="background:skyblue;padding:10px;width:100%">Add Product</button>
+
+<input name="name" placeholder="Product Name" class="btn">
+<input name="price" placeholder="Price" class="btn">
+<input type="file" name="image" class="btn">
+<input name="description" placeholder="Description" class="btn">
+
+<button class="btn">Add Product</button>
+
 </form>
 
 <hr>
 
 {% for p in products %}
-<div style="margin:10px">
-<img src="{{p.image}}" width="80"><br>
-<b>{{p.name}}</b> - {{p.price}}
+<div style="background:white;padding:10px;margin:10px;border-radius:10px">
+
+<img src="{{p.image}}" width="100"><br>
+
+<b>{{p.name}}</b><br>
+{{p.price}}৳
+
+<br><br>
+
+<a href="/edit/{{p.id}}">
+<button class="btn">Edit</button>
+</a>
+
+<a href="/delete/{{p.id}}">
+<button class="btn">Delete</button>
+</a>
+
 </div>
 {% endfor %}
+
+{% endblock %}
