@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 
-<img src="{{p.image}}" style="width:100%;max-height:300px;object-fit:cover;border-radius:10px">
+<img src="{{p.image}}" style="width:100%;max-height:280px;object-fit:cover;border-radius:10px">
 
 <h2>{{p.name}}</h2>
 <p>{{p.description}}</p>
@@ -13,13 +13,12 @@
 
 <button class="btn" onclick="showForm()">Order Now</button>
 
-<!-- ORDER FORM -->
 <div id="formBox" style="display:none;margin-top:10px">
 
 <form method="POST" action="/order">
 
-<input name="name" placeholder="Name" class="btn"><br>
-<input name="phone" placeholder="Phone number" class="btn"><br>
+<input name="name" placeholder="Name" class="btn">
+<input name="phone" placeholder="Phone number" class="btn">
 
 <select id="district" name="district" class="btn"></select>
 <select id="union" name="union" class="btn"></select>
@@ -37,11 +36,16 @@ function showForm(){
     document.getElementById("formBox").style.display="block";
 }
 
-/* DISTRICT + UNION DATA */
+/* 🔥 FULL DISTRICT DATA (sample + extendable) */
 const data = {
-"Dhaka":["Dhamrai","Savar"],
-"Chittagong":["Patiya","Raozan"],
-"Rajshahi":["Bagha","Paba"]
+"Dhaka":["Dhamrai","Savar","Keraniganj"],
+"Chittagong":["Patiya","Raozan","Sitakunda"],
+"Rajshahi":["Paba","Bagha"],
+"Khulna":["Batiaghata","Dumuria"],
+"Barisal":["Babuganj","Muladi"],
+"Sylhet":["Beanibazar","Golapganj"],
+"Rangpur":["Mithapukur","Badarganj"],
+"Mymensingh":["Trishal","Gafargaon"]
 };
 
 let district = document.getElementById("district");
