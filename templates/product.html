@@ -20,15 +20,22 @@
 <input name="name" placeholder="Name" class="btn">
 <input name="phone" placeholder="Phone number" class="btn">
 
-<select id="district" name="district" class="btn">
-<option>Loading districts...</option>
-</select>
+<!-- 🔍 SEARCHABLE DISTRICT -->
+<input type="text" id="districtSearch" placeholder="Search District..." class="btn">
+
+<select id="district" name="district" class="btn"></select>
+
+<!-- 🔍 SEARCHABLE UNION -->
+<input type="text" id="unionSearch" placeholder="Search Area..." class="btn">
 
 <select id="union" name="union" class="btn">
 <option>Select district first</option>
 </select>
 
-<input name="address" placeholder="Village / Street / House" class="btn">
+<!-- NEW FIELDS -->
+<input name="village" placeholder="Village name" class="btn">
+<input name="road" placeholder="Road name (optional)" class="btn">
+<input name="holding" placeholder="Holding number (optional)" class="btn">
 
 <button class="btn">Confirm Order</button>
 
@@ -41,48 +48,83 @@ function showForm(){
     document.getElementById("formBox").style.display="block";
 }
 
-/* 🔥 REAL API */
-
 const districtSelect = document.getElementById("district");
 const unionSelect = document.getElementById("union");
 
-/* LOAD DISTRICTS */
+const districtSearch = document.getElementById("districtSearch");
+const unionSearch = document.getElementById("unionSearch");
+
+let districts = [];
+let upazilas = [];
+
+/* 🔥 LOAD ALL DATA ONCE (FIX LOADING BUG) */
 fetch("https://bdapi.vercel.app/api/v.1/district")
 .then(res => res.json())
 .then(data => {
-    districtSelect.innerHTML = "<option>Select District</option>";
-    data.data.forEach(d => {
+    districts = data.data;
+    renderDistricts(districts);
+});
+
+fetch("https://bdapi.vercel.app/api/v.1/upazila")
+.then(res => res.json())
+.then(data => {
+    upazilas = data.data;
+});
+
+/* 🎯 RENDER DISTRICT */
+function renderDistricts(list){
+    districtSelect.innerHTML = "";
+    list.forEach(d => {
         let opt = document.createElement("option");
         opt.value = d.name;
         opt.innerHTML = d.name;
         districtSelect.appendChild(opt);
     });
+}
+
+/* 🔍 DISTRICT SEARCH */
+districtSearch.addEventListener("keyup", function(){
+    let val = this.value.toLowerCase();
+    let filtered = districts.filter(d => d.name.toLowerCase().includes(val));
+    renderDistricts(filtered);
 });
 
-/* LOAD UPAZILA (UNION) */
+/* 🎯 DISTRICT CHANGE → LOAD UNION */
 districtSelect.addEventListener("change", function(){
 
-    unionSelect.innerHTML = "<option>Loading...</option>";
+    let selected = this.value.toLowerCase();
 
-    fetch("https://bdapi.vercel.app/api/v.1/upazila")
-    .then(res => res.json())
-    .then(data => {
+    let filtered = upazilas.filter(u => 
+        u.district.toLowerCase() === selected
+    );
 
-        unionSelect.innerHTML = "<option>Select Area</option>";
+    renderUnions(filtered);
+});
 
-        let filtered = data.data.filter(u => 
-            u.district.toLowerCase() === districtSelect.value.toLowerCase()
-        );
-
-        filtered.forEach(u => {
-            let opt = document.createElement("option");
-            opt.value = u.name;
-            opt.innerHTML = u.name;
-            unionSelect.appendChild(opt);
-        });
-
+/* 🎯 RENDER UNION */
+function renderUnions(list){
+    unionSelect.innerHTML = "";
+    list.forEach(u => {
+        let opt = document.createElement("option");
+        opt.value = u.name;
+        opt.innerHTML = u.name;
+        unionSelect.appendChild(opt);
     });
+}
 
+/* 🔍 UNION SEARCH */
+unionSearch.addEventListener("keyup", function(){
+
+    let val = this.value.toLowerCase();
+
+    let selected = districtSelect.value.toLowerCase();
+
+    let filtered = upazilas.filter(u =>
+        u.district.toLowerCase() === selected &&
+        u.name.toLowerCase().includes(val)
+    );
+
+    renderUnions(filtered);
 });
 </script>
 
