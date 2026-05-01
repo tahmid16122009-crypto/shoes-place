@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {% block content %}
 
+<a href="/order_page/{{p.id}}">
+<button style="background:skyblue;padding:10px;">Order</button>
+</a>
+
 <img src="{{p.image}}" style="width:100%">
 
 <h2>{{p.name}}</h2>
