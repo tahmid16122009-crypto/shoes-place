@@ -1,101 +1,96 @@
 {% extends "base.html" %}
 {% block content %}
 
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-
-<img src="{{p.image}}" style="width:100%;max-height:280px;object-fit:cover;border-radius:10px">
+<img src="{{p.image}}" style="width:100%">
 
 <h2>{{p.name}}</h2>
-<p>{{p.description}}</p>
-<h3>{{p.price}}৳</h3>
 
-<button class="btn" onclick="showForm()">Order Now</button>
+<button onclick="showForm()">Order</button>
 
-<div id="formBox" style="display:none;margin-top:10px">
+<div id="formBox" style="display:none">
 
 <form method="POST" action="/order">
 
-<input name="name" placeholder="Name" class="btn" required>
-<input name="phone" placeholder="Phone number" class="btn" required>
+<select id="district" name="district"></select>
+<select id="upazila" name="union"></select>
 
-<!-- DISTRICT SEARCH -->
-<input type="text" id="districtSearch" placeholder="Search District" class="btn">
-
-<select id="district" name="district" class="btn" required></select>
-
-<!-- UPAZILA SEARCH -->
-<input type="text" id="upazilaSearch" placeholder="Search Upazila" class="btn">
-
-<select id="upazila" name="union" class="btn" required>
-<option>Select district first</option>
-</select>
-
-<input name="village" placeholder="Village name" class="btn" required>
-<input name="road" placeholder="Road (optional)" class="btn">
-<input name="holding" placeholder="Holding (optional)" class="btn">
-
-<button class="btn">Confirm Order</button>
+<button>Submit</button>
 
 </form>
 
 </div>
 
-<script src="/static/bd_data.js"></script>
-
 <script>
 function showForm(){
-    document.getElementById("formBox").style.display="block";
+document.getElementById("formBox").style.display="block";
 }
+
+/* 🔥 STORAGE SYSTEM */
+let DATA = JSON.parse(localStorage.getItem("BD_FULL_DATA") || "{}");
+
+/* 🔥 IF DATA নাই → API থেকে আনবে */
+async function loadData(){
+
+if(Object.keys(DATA).length > 0){
+render(DATA);
+return;
+}
+
+let districts = await fetch("https://bdapi.vercel.app/api/v.1/district").then(r=>r.json());
+let upazilas = await fetch("https://bdapi.vercel.app/api/v.1/upazila").then(r=>r.json());
+
+let map = {};
+
+/* 🔥 MAP বানানো */
+upazilas.data.forEach(u=>{
+if(!map[u.district]){
+map[u.district] = [];
+}
+map[u.district].push(u.name);
+});
+
+/* 🔥 SAVE (offline) */
+localStorage.setItem("BD_FULL_DATA", JSON.stringify(map));
+
+DATA = map;
+
+render(DATA);
+}
+
+/* 🔥 RENDER DISTRICT */
+function render(data){
 
 let districtBox = document.getElementById("district");
-let upazilaBox = document.getElementById("upazila");
 
-/* LOAD DISTRICT */
-let districts = Object.keys(BD_DATA);
-renderDistrict(districts);
+Object.keys(data).forEach(d=>{
+let opt=document.createElement("option");
+opt.value=d;
+opt.innerText=d;
+districtBox.appendChild(opt);
+});
 
-/* DISTRICT RENDER */
-function renderDistrict(list){
-    districtBox.innerHTML="";
-    list.forEach(d=>{
-        let opt=document.createElement("option");
-        opt.value=d;
-        opt.innerText=d;
-        districtBox.appendChild(opt);
-    });
 }
 
-/* DISTRICT SEARCH */
-document.getElementById("districtSearch").onkeyup=function(){
-    let val=this.value.toLowerCase();
-    let filtered=districts.filter(d=>d.toLowerCase().includes(val));
-    renderDistrict(filtered);
-}
+/* 🔥 DISTRICT CHANGE */
+document.getElementById("district").onchange=function(){
 
-/* DISTRICT CHANGE */
-districtBox.onchange=function(){
-    let list = BD_DATA[this.value] || [];
-    renderUpazila(list);
-}
+let list = DATA[this.value] || [];
 
-/* UPAZILA RENDER */
-function renderUpazila(list){
-    upazilaBox.innerHTML="";
-    list.forEach(u=>{
-        let opt=document.createElement("option");
-        opt.value=u;
-        opt.innerText=u;
-        upazilaBox.appendChild(opt);
-    });
-}
+let up = document.getElementById("upazila");
+up.innerHTML="";
 
-/* UPAZILA SEARCH */
-document.getElementById("upazilaSearch").onkeyup=function(){
-    let val=this.value.toLowerCase();
-    let d=districtBox.value;
-    let list=(BD_DATA[d] || []).filter(u=>u.toLowerCase().includes(val));
-    renderUpazila(list);
-}
+list.forEach(u=>{
+let opt=document.createElement("option");
+opt.value=u;
+opt.innerText=u;
+up.appendChild(opt);
+});
+
+};
+
+/* 🔥 START */
+loadData();
+
 </script>
 
 {% endblock %}
