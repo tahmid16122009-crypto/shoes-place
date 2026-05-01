@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>All Orders</h2>
+
+{% for o in orders %}
+<div style="background:white;padding:10px;margin:10px;border-radius:10px">
+
+<b>{{o.product_name}}</b><br>
+{{o.customer_name}}<br>
+{{o.phone}}<br>
+{{o.address}}<br>
+
+Status: <b>{{o.status}}</b><br><br>
+
+<a href="/status/{{o.id}}/Order placed"><button class="btn">Placed</button></a>
+<a href="/status/{{o.id}}/Order cancelled"><button class="btn">Cancel</button></a>
+<a href="/status/{{o.id}}/Delivered"><button class="btn">Delivered</button></a>
+
+</div>
+{% endfor %}
+
+{% endblock %}
