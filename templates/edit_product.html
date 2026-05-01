@@ -1,9 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+
 <h2>Edit Product</h2>
 
-<form method="POST" action="/update_product/{{p.id}}">
-<input name="name" value="{{p.name}}"><br>
-<input name="price" value="{{p.price}}"><br>
-<input name="image" value="{{p.image}}"><br>
-<input name="description" value="{{p.description}}"><br>
-<button>Update</button>
+<form method="POST" enctype="multipart/form-data">
+
+<input name="name" value="{{p.name}}" class="btn">
+<input name="price" value="{{p.price}}" class="btn">
+<input type="file" name="image" class="btn">
+<input name="description" value="{{p.description}}" class="btn">
+
+<button class="btn">Update</button>
+
 </form>
+
+{% endblock %}
