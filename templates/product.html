@@ -1,68 +1,97 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+{% extends "base.html" %}
+{% block content %}
 
-<style>
-body{
-font-family:sans-serif;
-margin:0;
-background:#f5fbff;
-}
-
-.container{
-padding:15px;
-}
-
-img{
-width:100%;
-border-radius:10px;
-}
-
-button{
-width:100%;
-padding:12px;
-border:none;
-border-radius:10px;
-background:skyblue;
-font-size:16px;
-margin-top:10px;
-}
-
-input{
-width:100%;
-padding:12px;
-margin-top:10px;
-border-radius:10px;
-border:1px solid #ccc;
-}
-
-</style>
-</head>
-
-<body>
-
-<div class="container">
-
-<img src="{{p.image}}">
+<img src="{{p.image}}" style="width:100%;max-height:280px;object-fit:cover;border-radius:10px">
 
 <h2>{{p.name}}</h2>
 <p>{{p.description}}</p>
 <h3>{{p.price}}৳</h3>
 
+<button class="btn" onclick="showForm()">Order Now</button>
+
+<div id="formBox" style="display:none;margin-top:10px">
+
 <form method="POST" action="/order">
 
-<input name="district" placeholder="District" required>
+<input name="name" placeholder="Name" class="btn">
+<input name="phone" placeholder="Phone number" class="btn">
 
-<input name="address" placeholder="Village / Road / House" required>
+<input id="districtSearch" placeholder="Search District" class="btn">
+<select id="district" name="district" class="btn"></select>
 
-<input type="hidden" name="product_id" value="{{p.id}}">
+<input id="unionSearch" placeholder="Search Area" class="btn">
+<select id="union" name="union" class="btn"></select>
 
-<button>Order Now</button>
+<input name="village" placeholder="Village name" class="btn">
+<input name="road" placeholder="Road name (optional)" class="btn">
+<input name="holding" placeholder="Holding number (optional)" class="btn">
+
+<button class="btn">Confirm Order</button>
 
 </form>
 
 </div>
 
-</body>
-</html>
+<script>
+function showForm(){
+    document.getElementById("formBox").style.display="block";
+}
+
+let districts = [];
+let upazilas = [];
+
+fetch("https://bdapi.vercel.app/api/v.1/district")
+.then(res=>res.json())
+.then(d=>{
+    districts = d.data;
+    renderDistrict(districts);
+});
+
+fetch("https://bdapi.vercel.app/api/v.1/upazila")
+.then(res=>res.json())
+.then(d=>{
+    upazilas = d.data;
+});
+
+function renderDistrict(list){
+    let d = document.getElementById("district");
+    d.innerHTML="";
+    list.forEach(x=>{
+        let o=document.createElement("option");
+        o.value=x.name;
+        o.innerHTML=x.name;
+        d.appendChild(o);
+    });
+}
+
+document.getElementById("districtSearch").onkeyup=function(){
+    let val=this.value.toLowerCase();
+    renderDistrict(districts.filter(x=>x.name.toLowerCase().includes(val)));
+}
+
+document.getElementById("district").onchange=function(){
+    let val=this.value.toLowerCase();
+    let list=upazilas.filter(x=>x.district.toLowerCase()==val);
+    renderUnion(list);
+}
+
+function renderUnion(list){
+    let u=document.getElementById("union");
+    u.innerHTML="";
+    list.forEach(x=>{
+        let o=document.createElement("option");
+        o.value=x.name;
+        o.innerHTML=x.name;
+        u.appendChild(o);
+    });
+}
+
+document.getElementById("unionSearch").onkeyup=function(){
+    let val=this.value.toLowerCase();
+    let d=document.getElementById("district").value.toLowerCase();
+    let list=upazilas.filter(x=>x.district.toLowerCase()==d && x.name.toLowerCase().includes(val));
+    renderUnion(list);
+}
+</script>
+
+{% endblock %}
