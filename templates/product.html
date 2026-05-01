@@ -1,8 +1,50 @@
 <!DOCTYPE html>
 <html>
-<body style="font-family:sans-serif">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-<img src="{{p.image}}" style="width:100%">
+<style>
+body{
+font-family:sans-serif;
+margin:0;
+background:#f5fbff;
+}
+
+.container{
+padding:15px;
+}
+
+img{
+width:100%;
+border-radius:10px;
+}
+
+button{
+width:100%;
+padding:12px;
+border:none;
+border-radius:10px;
+background:skyblue;
+font-size:16px;
+margin-top:10px;
+}
+
+input{
+width:100%;
+padding:12px;
+margin-top:10px;
+border-radius:10px;
+border:1px solid #ccc;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<img src="{{p.image}}">
 
 <h2>{{p.name}}</h2>
 <p>{{p.description}}</p>
@@ -11,13 +53,16 @@
 <form method="POST" action="/order">
 
 <input name="district" placeholder="District" required>
+
 <input name="address" placeholder="Village / Road / House" required>
 
 <input type="hidden" name="product_id" value="{{p.id}}">
 
-<button style="background:skyblue;padding:10px;width:100%">Order Now</button>
+<button>Order Now</button>
 
 </form>
+
+</div>
 
 </body>
 </html>
