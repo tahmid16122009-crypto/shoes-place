@@ -20,8 +20,13 @@
 <input name="name" placeholder="Name" class="btn">
 <input name="phone" placeholder="Phone number" class="btn">
 
-<select id="district" name="district" class="btn"></select>
-<select id="union" name="union" class="btn"></select>
+<select id="district" name="district" class="btn">
+<option>Loading districts...</option>
+</select>
+
+<select id="union" name="union" class="btn">
+<option>Select district first</option>
+</select>
 
 <input name="address" placeholder="Village / Street / House" class="btn">
 
@@ -36,37 +41,49 @@ function showForm(){
     document.getElementById("formBox").style.display="block";
 }
 
-/* 🔥 FULL DISTRICT DATA (sample + extendable) */
-const data = {
-"Dhaka":["Dhamrai","Savar","Keraniganj"],
-"Chittagong":["Patiya","Raozan","Sitakunda"],
-"Rajshahi":["Paba","Bagha"],
-"Khulna":["Batiaghata","Dumuria"],
-"Barisal":["Babuganj","Muladi"],
-"Sylhet":["Beanibazar","Golapganj"],
-"Rangpur":["Mithapukur","Badarganj"],
-"Mymensingh":["Trishal","Gafargaon"]
-};
+/* 🔥 REAL API */
 
-let district = document.getElementById("district");
-let union = document.getElementById("union");
+const districtSelect = document.getElementById("district");
+const unionSelect = document.getElementById("union");
 
-for(let d in data){
-    let opt = document.createElement("option");
-    opt.value = d;
-    opt.innerHTML = d;
-    district.appendChild(opt);
-}
-
-district.onchange = function(){
-    union.innerHTML="";
-    data[this.value].forEach(u=>{
-        let o = document.createElement("option");
-        o.value = u;
-        o.innerHTML = u;
-        union.appendChild(o);
+/* LOAD DISTRICTS */
+fetch("https://bdapi.vercel.app/api/v.1/district")
+.then(res => res.json())
+.then(data => {
+    districtSelect.innerHTML = "<option>Select District</option>";
+    data.data.forEach(d => {
+        let opt = document.createElement("option");
+        opt.value = d.name;
+        opt.innerHTML = d.name;
+        districtSelect.appendChild(opt);
     });
-};
+});
+
+/* LOAD UPAZILA (UNION) */
+districtSelect.addEventListener("change", function(){
+
+    unionSelect.innerHTML = "<option>Loading...</option>";
+
+    fetch("https://bdapi.vercel.app/api/v.1/upazila")
+    .then(res => res.json())
+    .then(data => {
+
+        unionSelect.innerHTML = "<option>Select Area</option>";
+
+        let filtered = data.data.filter(u => 
+            u.district.toLowerCase() === districtSelect.value.toLowerCase()
+        );
+
+        filtered.forEach(u => {
+            let opt = document.createElement("option");
+            opt.value = u.name;
+            opt.innerHTML = u.name;
+            unionSelect.appendChild(opt);
+        });
+
+    });
+
+});
 </script>
 
 {% endblock %}
