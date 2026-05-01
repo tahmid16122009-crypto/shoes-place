@@ -5,7 +5,6 @@ from supabase import create_client
 app = Flask(__name__)
 app.secret_key = "secret123"
 
-# ===== SUPABASE =====
 SUPABASE_URL = "https://hjwgjopshptmhlkcdagh.supabase.co"
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -64,7 +63,6 @@ def order():
     village = request.form.get("village") or ""
     road = request.form.get("road") or ""
     holding = request.form.get("holding") or ""
-    address = request.form.get("address") or ""
 
     for pid, qty in cart.items():
         product = supabase.table("products").select("*").eq("id", int(pid)).execute().data
@@ -80,7 +78,6 @@ def order():
                 "village": village,
                 "road": road,
                 "holding": holding,
-                "address": address,
                 "quantity": qty,
                 "status": "Order placed"
             }).execute()
