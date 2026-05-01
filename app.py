@@ -5,48 +5,32 @@ from supabase import create_client
 app = Flask(__name__)
 app.secret_key = "secret123"
 
+# ====== SUPABASE ======
 SUPABASE_URL = "https://hjwgjopshptmhlkcdagh.supabase.co"
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 ADMIN_PASSWORD = "Tahmid1122"
 
-# ---------- LOGIN ----------
+# ================= USER =================
+
 @app.route("/")
 def index():
-    if not session.get("user"):
-        return render_template("login.html")
     return redirect("/home")
 
-@app.route("/login", methods=["POST"])
-def login():
-    session["user"] = {
-        "name": request.form.get("name"),
-        "phone": request.form.get("phone")
-    }
-    return redirect("/home")
-
-@app.route("/skip")
-def skip():
-    session["user"] = None
-    return redirect("/home")
-
-# ---------- HOME ----------
 @app.route("/home")
 def home():
     products = supabase.table("products").select("*").execute().data or []
     return render_template("home.html", products=products)
 
-# ---------- PRODUCT ----------
 @app.route("/product/<int:pid>")
 def product(pid):
-    data = supabase.table("products").select("*").eq("id", pid).execute().data
-    if not data:
+    p = supabase.table("products").select("*").eq("id", pid).execute().data
+    if not p:
         return "Product not found"
-    return render_template("product.html", p=data[0])
+    return render_template("product.html", p=p[0])
 
-# ---------- CART ----------
+# ===== CART =====
 @app.route("/add/<int:pid>")
 def add(pid):
     cart = session.get("cart", {})
@@ -57,24 +41,27 @@ def add(pid):
 @app.route("/cart")
 def cart():
     cart = session.get("cart", {})
-    items, total = [], 0
+    items = []
 
     for pid, qty in cart.items():
         r = supabase.table("products").select("*").eq("id", int(pid)).execute()
         if r.data:
             p = r.data[0]
             p["qty"] = qty
-            p["subtotal"] = qty * int(p["price"])
-            total += p["subtotal"]
             items.append(p)
 
-    return render_template("cart.html", items=items, total=total)
+    return render_template("cart.html", items=items)
 
-# ---------- ORDER ----------
+# ===== ORDER =====
 @app.route("/order", methods=["POST"])
 def order():
-    user = session.get("user")
     cart = session.get("cart", {})
+
+    name = request.form.get("name")
+    phone = request.form.get("phone")
+    district = request.form.get("district")
+    union = request.form.get("union")
+    address = request.form.get("address")
 
     for pid, qty in cart.items():
         product = supabase.table("products").select("*").eq("id", int(pid)).execute().data
@@ -82,9 +69,11 @@ def order():
             p = product[0]
             supabase.table("orders").insert({
                 "product_name": p["name"],
-                "customer_name": user["name"] if user else "Guest",
-                "phone": user["phone"] if user else "000",
-                "address": request.form.get("address"),
+                "customer_name": name,
+                "phone": phone,
+                "district": district,
+                "union": union,
+                "address": address,
                 "quantity": qty,
                 "status": "Order placed"
             }).execute()
@@ -92,22 +81,21 @@ def order():
     session["cart"] = {}
     return redirect("/orders")
 
-# ---------- ORDERS ----------
+# ===== USER ORDERS =====
 @app.route("/orders")
 def orders():
-    user = session.get("user")
     data = supabase.table("orders").select("*").execute().data or []
-    my = [o for o in data if user and o["phone"] == user["phone"]]
-    return render_template("orders.html", orders=my)
+    return render_template("orders.html", orders=data)
 
-# ---------- ME ----------
+# ===== ME =====
 @app.route("/me")
 def me():
-    return render_template("me.html", user=session.get("user"))
+    return render_template("me.html")
+
 
 # ================= ADMIN =================
 
-@app.route("/admin", methods=["GET", "POST"])
+@app.route("/admin", methods=["GET","POST"])
 def admin():
     if request.method == "POST":
         if request.form.get("password") == ADMIN_PASSWORD:
@@ -123,7 +111,7 @@ def admin_dashboard():
     products = supabase.table("products").select("*").execute().data or []
     return render_template("admin.html", products=products)
 
-# ---------- ADD PRODUCT (🔥 FINAL IMAGE FIX) ----------
+# ===== ADD PRODUCT =====
 @app.route("/add_product", methods=["POST"])
 def add_product():
     if not session.get("admin"):
@@ -137,33 +125,73 @@ def add_product():
     image_url = ""
 
     if file and file.filename != "":
-        try:
-            filename = str(int(time.time())) + "_" + file.filename
+        filename = str(int(time.time())) + "_" + file.filename
 
-            # Upload file to Supabase storage
-            supabase.storage.from_("products").upload(
-                filename,
-                file.read(),
-                {"content-type": file.content_type}
-            )
+        supabase.storage.from_("products").upload(
+            filename,
+            file.read(),
+            {"content-type": file.content_type}
+        )
 
-            # ✅ Correct public URL (THIS FIXES IMAGE ISSUE)
-            image_url = f"{SUPABASE_URL}/storage/v1/object/public/products/{filename}"
+        image_url = f"{SUPABASE_URL}/storage/v1/object/public/products/{filename}"
 
-        except Exception as e:
-            return "UPLOAD ERROR: " + str(e)
-
-    try:
-        supabase.table("products").insert({
-            "name": name,
-            "price": price,
-            "image": image_url,
-            "description": description
-        }).execute()
-    except Exception as e:
-        return "DB ERROR: " + str(e)
+    supabase.table("products").insert({
+        "name": name,
+        "price": price,
+        "image": image_url,
+        "description": description
+    }).execute()
 
     return redirect("/admin/dashboard")
 
+# ===== DELETE PRODUCT =====
+@app.route("/delete/<int:pid>")
+def delete_product(pid):
+    if not session.get("admin"):
+        return redirect("/admin")
+
+    supabase.table("products").delete().eq("id", pid).execute()
+    return redirect("/admin/dashboard")
+
+# ===== EDIT PRODUCT =====
+@app.route("/edit/<int:pid>", methods=["GET","POST"])
+def edit(pid):
+    if not session.get("admin"):
+        return redirect("/admin")
+
+    if request.method == "POST":
+        supabase.table("products").update({
+            "name": request.form.get("name"),
+            "price": request.form.get("price"),
+            "description": request.form.get("description")
+        }).eq("id", pid).execute()
+
+        return redirect("/admin/dashboard")
+
+    p = supabase.table("products").select("*").eq("id", pid).execute().data[0]
+    return render_template("edit_product.html", p=p)
+
+# ===== ADMIN ORDERS =====
+@app.route("/admin/orders")
+def admin_orders():
+    if not session.get("admin"):
+        return redirect("/admin")
+
+    orders = supabase.table("orders").select("*").execute().data or []
+    return render_template("admin_orders.html", orders=orders)
+
+# ===== CHANGE STATUS =====
+@app.route("/status/<int:oid>/<status>")
+def change_status(oid, status):
+    if not session.get("admin"):
+        return redirect("/admin")
+
+    supabase.table("orders").update({
+        "status": status
+    }).eq("id", oid).execute()
+
+    return redirect("/admin/orders")
+
+# ================= RUN =================
 if __name__ == "__main__":
     app.run(debug=True)
