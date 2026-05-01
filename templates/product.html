@@ -18,17 +18,16 @@
 <input name="name" placeholder="Name" class="btn" required>
 <input name="phone" placeholder="Phone number" class="btn" required>
 
-<!-- DISTRICT SEARCH -->
-<input type="text" id="districtSearch" placeholder="Search District" class="btn">
+<!-- DISTRICT -->
 <select id="district" name="district" class="btn" required></select>
 
-<!-- UPAZILA SEARCH -->
-<input type="text" id="upazilaSearch" placeholder="Search Area" class="btn">
-<select id="upazila" name="union" class="btn" required></select>
+<!-- UPAZILA (CLICK করলে show হবে) -->
+<select id="upazila" name="union" class="btn" required>
+<option>Select district first</option>
+</select>
 
-<!-- UNION (MANUAL INPUT WITH SUGGESTION) -->
-<input list="unionList" id="unionInput" name="union" placeholder="Write or select your Union" class="btn" required>
-<datalist id="unionList"></datalist>
+<!-- SEARCH -->
+<input type="text" id="searchUpazila" placeholder="Search Upazila" class="btn">
 
 <!-- ADDRESS -->
 <input name="village" placeholder="Village name" class="btn" required>
@@ -49,75 +48,69 @@ function showForm(){
 let districts = [];
 let upazilas = [];
 
+const districtBox = document.getElementById("district");
+const upazilaBox = document.getElementById("upazila");
+
 /* LOAD DISTRICT */
 fetch("https://bdapi.vercel.app/api/v.1/district")
-.then(res => res.json())
-.then(data => {
+.then(res=>res.json())
+.then(data=>{
     districts = data.data;
-    renderDistrict(districts);
+
+    districtBox.innerHTML = "<option>Select District</option>";
+
+    districts.forEach(d=>{
+        let opt=document.createElement("option");
+        opt.value=d.name;
+        opt.innerText=d.name;
+        districtBox.appendChild(opt);
+    });
 });
 
-/* LOAD UPAZILA */
+/* LOAD UPAZILA (ONCE) */
 fetch("https://bdapi.vercel.app/api/v.1/upazila")
-.then(res => res.json())
-.then(data => {
+.then(res=>res.json())
+.then(data=>{
     upazilas = data.data;
 });
 
-/* RENDER DISTRICT */
-function renderDistrict(list){
-    let d = document.getElementById("district");
-    d.innerHTML="";
-    list.forEach(x=>{
-        let o=document.createElement("option");
-        o.value=x.name;
-        o.innerHTML=x.name;
-        d.appendChild(o);
-    });
-}
+/* DISTRICT CHANGE → LOAD UPAZILA */
+districtBox.onchange = function(){
 
-/* SEARCH DISTRICT */
-document.getElementById("districtSearch").onkeyup=function(){
-    let val=this.value.toLowerCase();
-    renderDistrict(districts.filter(x=>x.name.toLowerCase().includes(val)));
-}
+    let selected = this.value.toLowerCase();
 
-/* ON DISTRICT CHANGE */
-document.getElementById("district").onchange=function(){
-    let val=this.value.toLowerCase();
-    let list=upazilas.filter(x=>x.district.toLowerCase()==val);
-    renderUpazila(list);
-}
+    let filtered = upazilas.filter(u =>
+        u.district.toLowerCase() === selected
+    );
 
-/* RENDER UPAZILA */
+    renderUpazila(filtered);
+};
+
+/* RENDER FUNCTION */
 function renderUpazila(list){
-    let u=document.getElementById("upazila");
-    u.innerHTML="";
-    list.forEach(x=>{
-        let o=document.createElement("option");
-        o.value=x.name;
-        o.innerHTML=x.name;
-        u.appendChild(o);
-    });
+    upazilaBox.innerHTML = "";
 
-    /* auto union suggestion */
-    let unionList = document.getElementById("unionList");
-    unionList.innerHTML="";
-    list.forEach(x=>{
+    list.forEach(u=>{
         let opt=document.createElement("option");
-        opt.value=x.name + " Union";
-        unionList.appendChild(opt);
+        opt.value=u.name;
+        opt.innerText=u.name;
+        upazilaBox.appendChild(opt);
     });
 }
 
-/* SEARCH UPAZILA */
-document.getElementById("upazilaSearch").onkeyup=function(){
-    let val=this.value.toLowerCase();
-    let d=document.getElementById("district").value.toLowerCase();
+/* SEARCH */
+document.getElementById("searchUpazila").onkeyup = function(){
 
-    let list=upazilas.filter(x=>x.district.toLowerCase()==d && x.name.toLowerCase().includes(val));
-    renderUpazila(list);
-}
+    let val = this.value.toLowerCase();
+    let selected = districtBox.value.toLowerCase();
+
+    let filtered = upazilas.filter(u =>
+        u.district.toLowerCase() === selected &&
+        u.name.toLowerCase().includes(val)
+    );
+
+    renderUpazila(filtered);
+};
 </script>
 
 {% endblock %}
