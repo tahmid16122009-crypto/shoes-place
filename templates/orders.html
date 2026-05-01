@@ -1,11 +1,14 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h2>Orders</h2>
+<h2>Your Orders</h2>
 
 {% for o in orders %}
-<div style="margin:10px">
-{{o.product_name}} - {{o.status}}
+<div style="background:white;padding:10px;margin:10px;border-radius:10px">
+
+<b>{{o.product_name}}</b><br>
+Status: <b>{{o.status}}</b>
+
 </div>
 {% endfor %}
 
