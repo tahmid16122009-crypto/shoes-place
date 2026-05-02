@@ -1,55 +1,26 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-body{
-margin:0;
-font-family:sans-serif;
-background:#e6f7ff;
-display:flex;
-justify-content:center;
-align-items:center;
-height:100vh;
-}
-
-.box{
-background:white;
-padding:20px;
-border-radius:15px;
-width:90%;
-text-align:center;
-}
-
-input,button{
-width:100%;
-padding:12px;
-margin:8px 0;
-border-radius:10px;
-border:1px solid #ccc;
-}
-
-button{
-background:skyblue;
-border:none;
-font-weight:bold;
-}
+body{background:#e6f7ff;font-family:sans-serif;text-align:center}
+.box{margin-top:100px}
+input,button{width:80%;padding:12px;margin:10px;border-radius:10px}
+button{background:skyblue;border:none}
 </style>
 </head>
 <body>
 
 <div class="box">
-
 <h2>Login</h2>
 
 <form method="POST" action="/login">
 <input name="name" placeholder="Name" required>
-<input name="phone" placeholder="Phone Number" required>
-<button type="submit">Login</button>
+<input name="phone" placeholder="Phone" required>
+<button>Login</button>
 </form>
 
-<a href="/skip">
-<button style="background:lightgray">Skip</button>
-</a>
+<a href="/skip"><button>Skip</button></a>
 
 </div>
 
