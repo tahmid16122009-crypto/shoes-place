@@ -1,10 +1,11 @@
-from flask import Flask, render_template, request, redirect, session, url_for
+from flask import Flask, render_template, request, redirect, session
 from supabase import create_client
 import os
 
 app = Flask(__name__)
 app.secret_key = "secret123"
 
+# ===== Supabase =====
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
@@ -12,7 +13,7 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 ADMIN_PASS = "Tahmid1122"
 
-# ---------- LOGIN ----------
+# ================= LOGIN =================
 @app.route("/")
 def index():
     if "user" not in session:
@@ -31,23 +32,24 @@ def skip():
     session["phone"] = ""
     return redirect("/home")
 
-# ---------- HOME ----------
+# ================= HOME =================
 @app.route("/home")
 def home():
     products = supabase.table("products").select("*").execute().data
     return render_template("home.html", products=products)
 
-# ---------- PRODUCT ----------
+# ================= PRODUCT =================
 @app.route("/product/<int:id>")
 def product(id):
     p = supabase.table("products").select("*").eq("id", id).execute().data[0]
     return render_template("product.html", p=p)
 
-# ---------- CART ----------
+# ================= CART =================
 @app.route("/add_to_cart/<int:id>")
 def add_to_cart(id):
     cart = session.get("cart", [])
-    cart.append(id)
+    if id not in cart:
+        cart.append(id)
     session["cart"] = cart
     return redirect("/cart")
 
@@ -69,7 +71,7 @@ def remove_cart(id):
     session["cart"] = cart
     return redirect("/cart")
 
-# ---------- ORDER ----------
+# ================= ORDER =================
 @app.route("/order", methods=["POST"])
 def order():
     data = {
@@ -78,12 +80,13 @@ def order():
         "product_name": request.form["product_name"],
         "quantity": request.form["quantity"],
         "district": request.form["district"],
-        "upazila": request.form["upazila"],
-        "union": request.form["union"],
+        "upazila": request.form.get("upazila", ""),
+        "union": request.form.get("union", ""),
         "road": request.form.get("road", ""),
         "holding": request.form.get("holding", ""),
         "status": "pending"
     }
+
     supabase.table("orders").insert(data).execute()
     return redirect("/orders")
 
@@ -92,8 +95,13 @@ def orders():
     orders = supabase.table("orders").select("*").execute().data
     return render_template("orders.html", orders=orders)
 
-# ---------- ADMIN ----------
-@app.route("/admin", methods=["GET","POST"])
+# ================= ME =================
+@app.route("/me")
+def me():
+    return render_template("me.html")
+
+# ================= ADMIN =================
+@app.route("/admin", methods=["GET", "POST"])
 def admin():
     if request.method == "POST":
         if request.form.get("password") == ADMIN_PASS:
@@ -107,6 +115,7 @@ def admin():
     products = supabase.table("products").select("*").execute().data
     return render_template("admin.html", products=products)
 
+# ================= ADD PRODUCT =================
 @app.route("/add_product", methods=["POST"])
 def add_product():
     data = {
@@ -115,14 +124,17 @@ def add_product():
         "description": request.form["description"],
         "image": request.form["image"]
     }
+
     supabase.table("products").insert(data).execute()
     return redirect("/admin")
 
+# ================= DELETE =================
 @app.route("/delete/<int:id>")
 def delete(id):
     supabase.table("products").delete().eq("id", id).execute()
     return redirect("/admin")
 
-# ---------- RUN ----------
+# ================= RUN =================
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
