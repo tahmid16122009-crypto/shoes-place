@@ -1,26 +1,20 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-body{font-family:sans-serif}
-button{width:100%;padding:12px;background:skyblue;border:none;border-radius:10px}
-input{width:100%;padding:12px;margin-top:10px;border-radius:10px}
-</style>
-</head>
-<body>
+<a href="/home">⬅ Back</a>
 
 <img src="{{p.image}}" style="width:100%">
-
 <h2>{{p.name}}</h2>
 <p>{{p.description}}</p>
-<h3>{{p.price}}৳</h3>
+
+<a href="/add_to_cart/{{p.id}}">Add to Cart</a>
 
 <form method="POST" action="/order">
-<input name="address" placeholder="Full Address" required>
-<input type="hidden" name="product_id" value="{{p.id}}">
-<button>Order Now</button>
+<input type="hidden" name="product_name" value="{{p.name}}">
+<input name="quantity" placeholder="Quantity">
+<input name="name" placeholder="Name">
+<input name="phone" placeholder="Phone">
+<input name="district" placeholder="District">
+<input name="upazila" placeholder="Upazila">
+<input name="union" placeholder="Union">
+<input name="road" placeholder="Road">
+<input name="holding" placeholder="Holding">
+<button>Order</button>
 </form>
-
-</body>
-</html>
