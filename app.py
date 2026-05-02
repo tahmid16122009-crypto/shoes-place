@@ -5,7 +5,6 @@ import os
 app = Flask(__name__)
 app.secret_key = "secret123"
 
-# ===== Supabase =====
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
@@ -22,8 +21,8 @@ def index():
 
 @app.route("/login", methods=["POST"])
 def login():
-    session["user"] = request.form["name"]
-    session["phone"] = request.form["phone"]
+    session["user"] = request.form.get("name")
+    session["phone"] = request.form.get("phone")
     return redirect("/home")
 
 @app.route("/skip")
@@ -35,14 +34,19 @@ def skip():
 # ================= HOME =================
 @app.route("/home")
 def home():
-    products = supabase.table("products").select("*").execute().data
+    try:
+        products = supabase.table("products").select("*").execute().data
+    except:
+        products = []
     return render_template("home.html", products=products)
 
 # ================= PRODUCT =================
 @app.route("/product/<int:id>")
 def product(id):
-    p = supabase.table("products").select("*").eq("id", id).execute().data[0]
-    return render_template("product.html", p=p)
+    res = supabase.table("products").select("*").eq("id", id).execute().data
+    if not res:
+        return "Product not found"
+    return render_template("product.html", p=res[0])
 
 # ================= CART =================
 @app.route("/add_to_cart/<int:id>")
@@ -74,30 +78,39 @@ def remove_cart(id):
 # ================= ORDER =================
 @app.route("/order", methods=["POST"])
 def order():
-    data = {
-        "name": request.form["name"],
-        "phone": request.form["phone"],
-        "product_name": request.form["product_name"],
-        "quantity": request.form["quantity"],
-        "district": request.form["district"],
-        "upazila": request.form.get("upazila", ""),
-        "union": request.form.get("union", ""),
-        "road": request.form.get("road", ""),
-        "holding": request.form.get("holding", ""),
-        "status": "pending"
-    }
+    try:
+        data = {
+            "name": request.form.get("name"),
+            "phone": request.form.get("phone"),
+            "product_name": request.form.get("product_name"),
+            "quantity": request.form.get("quantity"),
+            "district": request.form.get("district"),
+            "upazila": request.form.get("upazila"),
+            "union": request.form.get("union"),
+            "road": request.form.get("road"),
+            "holding": request.form.get("holding"),
+            "status": "pending"
+        }
 
-    supabase.table("orders").insert(data).execute()
-    return redirect("/orders")
+        supabase.table("orders").insert(data).execute()
+        return redirect("/orders")
+
+    except Exception as e:
+        return f"ORDER ERROR: {str(e)}"
 
 @app.route("/orders")
 def orders():
-    orders = supabase.table("orders").select("*").execute().data
+    try:
+        orders = supabase.table("orders").select("*").execute().data
+    except:
+        orders = []
     return render_template("orders.html", orders=orders)
 
 # ================= ME =================
 @app.route("/me")
 def me():
+    if session.get("user") == "Guest":
+        return render_template("login.html")
     return render_template("me.html")
 
 # ================= ADMIN =================
@@ -118,23 +131,29 @@ def admin():
 # ================= ADD PRODUCT =================
 @app.route("/add_product", methods=["POST"])
 def add_product():
-    data = {
-        "name": request.form["name"],
-        "price": request.form["price"],
-        "description": request.form["description"],
-        "image": request.form["image"]
-    }
+    try:
+        data = {
+            "name": request.form.get("name"),
+            "price": request.form.get("price"),
+            "description": request.form.get("description"),
+            "image": request.form.get("image")
+        }
 
-    supabase.table("products").insert(data).execute()
-    return redirect("/admin")
+        supabase.table("products").insert(data).execute()
+        return redirect("/admin")
+
+    except Exception as e:
+        return f"ADD ERROR: {str(e)}"
 
 # ================= DELETE =================
 @app.route("/delete/<int:id>")
 def delete(id):
-    supabase.table("products").delete().eq("id", id).execute()
+    try:
+        supabase.table("products").delete().eq("id", id).execute()
+    except:
+        pass
     return redirect("/admin")
 
 # ================= RUN =================
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
