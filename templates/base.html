@@ -5,61 +5,82 @@
 
 <style>
 body{
-    margin:0;
-    font-family:Arial;
-    background:#f0f8ff;
+margin:0;
+font-family:sans-serif;
+background:#f5fbff;
 }
 
-/* ZOOM OFF */
-html, body{
-    touch-action: manipulation;
+.header{
+background:skyblue;
+padding:12px;
+text-align:center;
+font-weight:bold;
 }
 
-/* CONTENT */
-.content{
-    padding:10px;
-    padding-bottom:90px;
+.container{
+padding:10px;
+margin-bottom:70px;
 }
 
-/* BUTTON */
-.btn{
-    background:#87CEFA;
-    border:none;
-    padding:14px;
-    width:100%;
-    font-size:18px;
-    border-radius:10px;
-    margin-top:8px;
+.grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:10px;
 }
 
-/* NAVBAR */
+.card{
+background:white;
+padding:10px;
+border-radius:10px;
+text-align:center;
+}
+
+.card img{
+width:100%;
+height:140px;
+object-fit:cover;
+border-radius:10px;
+}
+
+button{
+width:100%;
+padding:10px;
+margin-top:5px;
+background:skyblue;
+border:none;
+border-radius:8px;
+}
+
+input{
+width:100%;
+padding:10px;
+margin-top:5px;
+border-radius:8px;
+border:1px solid #ccc;
+}
+
 .bottom{
-    position:fixed;
-    bottom:0;
-    width:100%;
-    background:white;
-    display:flex;
-    justify-content:space-around;
-    padding:12px 0;
-    border-top:1px solid #ccc;
+position:fixed;
+bottom:0;
+width:100%;
+display:flex;
+justify-content:space-around;
+background:white;
+padding:10px;
+border-top:1px solid #ccc;
 }
 
-.bottom a{
-    text-decoration:none;
-    font-size:16px;
-    font-weight:bold;
-    color:#333;
-}
-
-.bottom a:active{
-    color:#00aaff;
-}
+a{text-decoration:none;color:black}
 </style>
 </head>
 
 <body>
 
-<div class="content">
+<div class="header">
+<a href="/home">⬅ Back</a>
+</div>
+
+<div class="container">
 {% block content %}{% endblock %}
 </div>
 
