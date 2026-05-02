@@ -1,17 +1,12 @@
-{% extends "base.html" %}
-{% block content %}
-
 <h2>Cart</h2>
 
-{% for i in items %}
-<div style="margin:10px;font-size:18px">
-{{i.name}} x {{i.qty}}
-</div>
+{% if products %}
+{% for p in products %}
+<img src="{{p.image}}" width="100">
+<p>{{p.name}}</p>
+<a href="/product/{{p.id}}">View</a>
+<a href="/remove_cart/{{p.id}}">Remove</a>
 {% endfor %}
-
-<form method="POST" action="/order">
-<input name="address" placeholder="Address" class="btn">
-<button class="btn">Place Order</button>
-</form>
-
-{% endblock %}
+{% else %}
+<p>No products added to cart yet.</p>
+{% endif %}
