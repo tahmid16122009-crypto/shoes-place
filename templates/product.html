@@ -1,20 +1,30 @@
-<a href="/home">⬅ Back</a>
+{% extends "base.html" %}
+{% block content %}
 
-<img src="{{p.image}}" style="width:100%">
+<img src="{{p.image}}" style="width:100%;border-radius:10px">
+
 <h2>{{p.name}}</h2>
 <p>{{p.description}}</p>
+<h3>{{p.price}}৳</h3>
 
-<a href="/add_to_cart/{{p.id}}">Add to Cart</a>
+<a href="/add_to_cart/{{p.id}}">
+<button>Add to Cart</button>
+</a>
 
 <form method="POST" action="/order">
 <input type="hidden" name="product_name" value="{{p.name}}">
-<input name="quantity" placeholder="Quantity">
-<input name="name" placeholder="Name">
-<input name="phone" placeholder="Phone">
-<input name="district" placeholder="District">
+
+<input name="quantity" placeholder="Quantity" required>
+<input name="name" placeholder="Name" required>
+<input name="phone" placeholder="Phone" required>
+
+<input name="district" placeholder="District" required>
 <input name="upazila" placeholder="Upazila">
 <input name="union" placeholder="Union">
-<input name="road" placeholder="Road">
-<input name="holding" placeholder="Holding">
-<button>Order</button>
+<input name="road" placeholder="Road (optional)">
+<input name="holding" placeholder="Holding (optional)">
+
+<button>Order Now</button>
 </form>
+
+{% endblock %}
