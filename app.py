@@ -1,7 +1,8 @@
-from flask import Flask, render_template, request, redirect, session, url_for
+from flask import Flask, render_template, request, redirect, session
 from supabase import create_client
 import os
 import uuid
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = "secret123"
@@ -13,7 +14,7 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 ADMIN_PASS = "Tahmid1122"
 
-# ========= LOGIN =========
+# ===== LOGIN =====
 @app.route("/")
 def index():
     if "user" not in session:
@@ -32,19 +33,19 @@ def skip():
     session["phone"] = ""
     return redirect("/home")
 
-# ========= HOME =========
+# ===== HOME =====
 @app.route("/home")
 def home():
     products = supabase.table("products").select("*").execute().data
     return render_template("home.html", products=products)
 
-# ========= PRODUCT =========
+# ===== PRODUCT =====
 @app.route("/product/<int:id>")
 def product(id):
     res = supabase.table("products").select("*").eq("id", id).execute().data
     return render_template("product.html", p=res[0])
 
-# ========= CART =========
+# ===== CART =====
 @app.route("/add_to_cart/<int:id>")
 def add_to_cart(id):
     cart = session.get("cart", [])
@@ -71,19 +72,26 @@ def remove_cart(id):
     session["cart"] = cart
     return redirect("/cart")
 
-# ========= ORDER =========
+# ===== ORDER =====
 @app.route("/order", methods=["POST"])
 def order():
     try:
+        product_name = request.form.get("product_name")
+
+        # product image fetch
+        prod = supabase.table("products").select("*").eq("name", product_name).execute().data
+        image = prod[0]["image"] if prod else ""
+
         data = {
-            "product_name": request.form.get("product_name"),
+            "product_name": product_name,
             "quantity": request.form.get("quantity"),
             "phone": request.form.get("phone"),
             "district": request.form.get("district"),
+            "image": image,
+            "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
             "status": "pending"
         }
 
-        # name থাকলে add
         if request.form.get("name"):
             data["name"] = request.form.get("name")
 
@@ -99,7 +107,7 @@ def orders():
     orders = supabase.table("orders").select("*").execute().data
     return render_template("orders.html", orders=orders)
 
-# ========= ME =========
+# ===== ME =====
 @app.route("/me")
 def me():
     return render_template("me.html")
@@ -110,7 +118,7 @@ def update_profile():
     session["phone"] = request.form.get("phone")
     return redirect("/me")
 
-# ========= ADMIN =========
+# ===== ADMIN =====
 @app.route("/admin", methods=["GET","POST"])
 def admin():
     if request.method == "POST":
@@ -123,17 +131,18 @@ def admin():
     products = supabase.table("products").select("*").execute().data
     return render_template("admin.html", products=products)
 
-# ========= ADD PRODUCT (IMAGE UPLOAD FIX) =========
+# ===== ADD PRODUCT (FIXED UPLOAD) =====
 @app.route("/add_product", methods=["POST"])
 def add_product():
     try:
-        file = request.files.get("image")
+        file = request.files["image"]
 
-        image_url = ""
-        if file:
-            filename = str(uuid.uuid4()) + file.filename
-            supabase.storage.from_("products").upload(filename, file)
-            image_url = f"{SUPABASE_URL}/storage/v1/object/public/products/{filename}"
+        filename = str(uuid.uuid4()) + "_" + file.filename
+        file_bytes = file.read()
+
+        supabase.storage.from_("products").upload(filename, file_bytes)
+
+        image_url = f"{SUPABASE_URL}/storage/v1/object/public/products/{filename}"
 
         data = {
             "name": request.form.get("name"),
@@ -149,12 +158,12 @@ def add_product():
     except Exception as e:
         return f"ADD ERROR: {str(e)}"
 
-# ========= DELETE =========
+# ===== DELETE =====
 @app.route("/delete/<int:id>")
 def delete(id):
     supabase.table("products").delete().eq("id", id).execute()
     return redirect("/admin")
 
-# ========= RUN =========
+# ===== RUN =====
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
