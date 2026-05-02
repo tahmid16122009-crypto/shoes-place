@@ -1,17 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
 
-{% if user %}
-<h2>{{user.name}}</h2>
-<p>{{user.phone}}</p>
-{% else %}
+<h2>My Account</h2>
 
-<form method="POST" action="/login">
-<input name="name" placeholder="Name" class="btn">
-<input name="phone" placeholder="Phone" class="btn">
-<button class="btn">Login</button>
-</form>
-
-{% endif %}
+<p>Name: {{session.get('user')}}</p>
+<p>Phone: {{session.get('phone')}}</p>
 
 {% endblock %}
