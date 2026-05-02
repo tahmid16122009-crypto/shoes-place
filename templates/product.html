@@ -1,123 +1,26 @@
-{% extends "base.html" %}
-{% block content %}
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body{font-family:sans-serif}
+button{width:100%;padding:12px;background:skyblue;border:none;border-radius:10px}
+input{width:100%;padding:12px;margin-top:10px;border-radius:10px}
+</style>
+</head>
+<body>
 
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-
-<img src="{{p.image}}" style="width:100%;max-height:280px;object-fit:cover;border-radius:10px">
+<img src="{{p.image}}" style="width:100%">
 
 <h2>{{p.name}}</h2>
 <p>{{p.description}}</p>
 <h3>{{p.price}}৳</h3>
 
-<button class="btn" onclick="showForm()">Order Now</button>
-
-<div id="formBox" style="display:none;margin-top:10px">
-
 <form method="POST" action="/order">
-
-<input name="name" placeholder="Name" class="btn" required>
-<input name="phone" placeholder="Phone number" class="btn" required>
-
-<!-- DISTRICT SEARCH -->
-<input type="text" id="districtSearch" placeholder="Search District" class="btn">
-<select id="district" name="district" class="btn" required></select>
-
-<!-- UPAZILA SEARCH -->
-<input type="text" id="upazilaSearch" placeholder="Search Area" class="btn">
-<select id="upazila" name="union" class="btn" required></select>
-
-<!-- UNION (MANUAL INPUT WITH SUGGESTION) -->
-<input list="unionList" id="unionInput" name="union" placeholder="Write or select your Union" class="btn" required>
-<datalist id="unionList"></datalist>
-
-<!-- ADDRESS -->
-<input name="village" placeholder="Village name" class="btn" required>
-<input name="road" placeholder="Road name (optional)" class="btn">
-<input name="holding" placeholder="Holding number (optional)" class="btn">
-
-<button class="btn">Confirm Order</button>
-
+<input name="address" placeholder="Full Address" required>
+<input type="hidden" name="product_id" value="{{p.id}}">
+<button>Order Now</button>
 </form>
 
-</div>
-
-<script>
-function showForm(){
-    document.getElementById("formBox").style.display="block";
-}
-
-let districts = [];
-let upazilas = [];
-
-/* LOAD DISTRICT */
-fetch("https://bdapi.vercel.app/api/v.1/district")
-.then(res => res.json())
-.then(data => {
-    districts = data.data;
-    renderDistrict(districts);
-});
-
-/* LOAD UPAZILA */
-fetch("https://bdapi.vercel.app/api/v.1/upazila")
-.then(res => res.json())
-.then(data => {
-    upazilas = data.data;
-});
-
-/* RENDER DISTRICT */
-function renderDistrict(list){
-    let d = document.getElementById("district");
-    d.innerHTML="";
-    list.forEach(x=>{
-        let o=document.createElement("option");
-        o.value=x.name;
-        o.innerHTML=x.name;
-        d.appendChild(o);
-    });
-}
-
-/* SEARCH DISTRICT */
-document.getElementById("districtSearch").onkeyup=function(){
-    let val=this.value.toLowerCase();
-    renderDistrict(districts.filter(x=>x.name.toLowerCase().includes(val)));
-}
-
-/* ON DISTRICT CHANGE */
-document.getElementById("district").onchange=function(){
-    let val=this.value.toLowerCase();
-    let list=upazilas.filter(x=>x.district.toLowerCase()==val);
-    renderUpazila(list);
-}
-
-/* RENDER UPAZILA */
-function renderUpazila(list){
-    let u=document.getElementById("upazila");
-    u.innerHTML="";
-    list.forEach(x=>{
-        let o=document.createElement("option");
-        o.value=x.name;
-        o.innerHTML=x.name;
-        u.appendChild(o);
-    });
-
-    /* auto union suggestion */
-    let unionList = document.getElementById("unionList");
-    unionList.innerHTML="";
-    list.forEach(x=>{
-        let opt=document.createElement("option");
-        opt.value=x.name + " Union";
-        unionList.appendChild(opt);
-    });
-}
-
-/* SEARCH UPAZILA */
-document.getElementById("upazilaSearch").onkeyup=function(){
-    let val=this.value.toLowerCase();
-    let d=document.getElementById("district").value.toLowerCase();
-
-    let list=upazilas.filter(x=>x.district.toLowerCase()==d && x.name.toLowerCase().includes(val));
-    renderUpazila(list);
-}
-</script>
-
-{% endblock %}
+</body>
+</html>
