@@ -1,15 +1,10 @@
-{% extends "base.html" %}
-{% block content %}
+<h2>Orders</h2>
 
-<h2>Your Orders</h2>
-
+{% if orders %}
 {% for o in orders %}
-<div style="background:white;padding:10px;margin:10px;border-radius:10px">
-
-<b>{{o.product_name}}</b><br>
-Status: <b>{{o.status}}</b>
-
-</div>
+<p>{{o.product_name}} - {{o.quantity}}</p>
 {% endfor %}
-
-{% endblock %}
+{% else %}
+<p>Nothing has been ordered yet.</p>
+<a href="/home">Order Now</a>
+{% endif %}
