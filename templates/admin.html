@@ -1,24 +1,19 @@
 <h2>Admin Panel</h2>
 
-<form method="POST" action="/add_product">
+<form method="POST" action="/add_product" enctype="multipart/form-data">
 <input name="name" placeholder="Product Name" required>
 <input name="price" placeholder="Price" required>
 <input name="description" placeholder="Description" required>
-<input name="image" placeholder="Image URL" required>
-<button type="submit">Add Product</button>
+
+<input type="file" name="image" required>
+
+<button>Add Product</button>
 </form>
 
 <hr>
 
-<h3>Products</h3>
-
 {% for p in products %}
-<div>
-<p>{{p.name}} - {{p.price}}</p>
+<p>{{p.name}}</p>
+<img src="{{p.image}}" width="100">
 <a href="/delete/{{p.id}}">Delete</a>
-</div>
 {% endfor %}
-
-<hr>
-
-<a href="/orders">View Orders</a>
