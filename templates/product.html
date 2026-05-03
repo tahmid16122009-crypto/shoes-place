@@ -1,7 +1,17 @@
-<img src="{{p.image}}" width="100%">
+{% extends "base.html" %}
+{% block content %}
+
+<img src="{{p.image}}" style="width:100%;border-radius:10px">
 
 <h2>{{p.name}}</h2>
 <p>{{p.description}}</p>
+<h3>{{p.price}}৳</h3>
+
+<a href="/add_to_cart/{{p.id}}">
+<button>Add to Cart</button>
+</a>
+
+<hr>
 
 <form method="POST" action="/order">
 
@@ -10,14 +20,10 @@
 <input name="quantity" placeholder="Quantity" required>
 <input name="name" placeholder="Your Name" required>
 <input name="phone" placeholder="Phone" required>
-
 <input name="district" placeholder="District" required>
-<input name="upazila" placeholder="Upazila">
-<input name="union" placeholder="Union">
-<input name="road" placeholder="Road">
-<input name="holding" placeholder="Holding">
 
-<button type="submit">Order Now</button>
+<button>Order Now</button>
+
 </form>
 
-<a href="/add_to_cart/{{p.id}}">Add to Cart</a>
+{% endblock %}
