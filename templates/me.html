@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h2>My Profile</h2>
+<h2>👤 My Profile</h2>
 
 <div class="card">
-<p><b>Name:</b> {{session.get('user')}}</p>
-<p><b>Phone:</b> {{session.get('phone')}}</p>
+<p>Name: {{session.get('user')}}</p>
+<p>Phone: {{session.get('phone')}}</p>
 </div>
 
-<h3>Edit</h3>
+<h3>Edit Profile</h3>
 
 <form method="POST" action="/update_profile">
 <input name="name" placeholder="New Name">
