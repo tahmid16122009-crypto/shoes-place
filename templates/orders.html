@@ -1,19 +1,21 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h2>Orders</h2>
+<h2>📦 Orders</h2>
 
+{% if orders %}
 {% for o in orders %}
 <div class="card">
+
 <img src="{{o.image}}">
-<p>{{o.product_name}}</p>
+<h4>{{o.product_name}}</h4>
 <p>Qty: {{o.quantity}}</p>
 <p>Date: {{o.date}}</p>
+
 </div>
 {% endfor %}
-
-{% if not orders %}
-<p>Nothing has been ordered yet.</p>
+{% else %}
+<p>Nothing ordered yet</p>
 <a href="/home"><button>Order Now</button></a>
 {% endif %}
 
