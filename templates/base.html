@@ -10,57 +10,73 @@
 body{
 margin:0;
 font-family:sans-serif;
-background:#f5fbff;
+background:linear-gradient(to bottom,#eaf6ff,#ffffff);
 }
 
+/* container */
 .container{
 padding:12px;
 margin-bottom:90px;
 }
 
-/* CARD */
+/* header */
+.header{
+font-size:20px;
+font-weight:bold;
+margin-bottom:10px;
+}
+
+/* card */
 .card{
 background:white;
 padding:12px;
-margin:10px 0;
-border-radius:12px;
-box-shadow:0 2px 6px rgba(0,0,0,0.1);
+border-radius:14px;
+box-shadow:0 4px 10px rgba(0,0,0,0.08);
+margin-bottom:12px;
+transition:0.2s;
 }
 
-/* IMAGE */
-img{
+.card:hover{
+transform:scale(1.02);
+}
+
+/* image */
+.img{
 width:100%;
-border-radius:10px;
+height:130px;
+object-fit:cover;
+border-radius:12px;
 }
 
-/* BUTTON */
+/* button */
 button{
 width:100%;
 padding:10px;
-background:skyblue;
+background:linear-gradient(45deg,skyblue,deepskyblue);
 border:none;
 border-radius:10px;
-font-size:16px;
+color:white;
+font-size:15px;
+margin-top:6px;
 }
 
-/* INPUT */
+/* input */
 input{
 width:100%;
 padding:10px;
 margin:6px 0;
-border-radius:8px;
+border-radius:10px;
 border:1px solid #ddd;
-font-size:15px;
 }
 
-/* GRID */
+/* grid */
 .grid{
 display:grid;
 grid-template-columns:1fr 1fr;
 gap:12px;
 }
 
-/* NAVBAR */
+/* bottom nav */
 .bottom{
 position:fixed;
 bottom:0;
@@ -69,21 +85,25 @@ display:flex;
 justify-content:space-around;
 background:white;
 padding:10px 0;
-box-shadow:0 -2px 5px rgba(0,0,0,0.1);
+box-shadow:0 -3px 10px rgba(0,0,0,0.1);
 }
 
 .bottom a{
-background:skyblue;
-padding:8px 12px;
-border-radius:12px;
-text-align:center;
-font-size:14px;
-color:black;
 text-decoration:none;
+color:black;
+text-align:center;
+font-size:13px;
+}
+
+.bottom div{
+background:linear-gradient(45deg,skyblue,deepskyblue);
+padding:8px;
+border-radius:12px;
+color:white;
 min-width:60px;
 }
 
-/* BACK BUTTON */
+/* back */
 .back{
 display:inline-block;
 margin-bottom:10px;
@@ -99,19 +119,17 @@ font-size:18px;
 
 <div class="container">
 
-<!-- 🔙 Back Button -->
-<a href="javascript:history.back()" class="back">⬅ Back</a>
+<a href="javascript:history.back()" class="back">⬅</a>
 
 {% block content %}{% endblock %}
 
 </div>
 
-<!-- 🔽 Bottom Navigation -->
 <div class="bottom">
-<a href="/home">🏠<br>Home</a>
-<a href="/cart">🛒<br>Cart</a>
-<a href="/orders">📦<br>Orders</a>
-<a href="/me">👤<br>Me</a>
+<a href="/home"><div>🏠<br>Home</div></a>
+<a href="/cart"><div>🛒<br>Cart</div></a>
+<a href="/orders"><div>📦<br>Orders</div></a>
+<a href="/me"><div>👤<br>Me</div></a>
 </div>
 
 </body>
