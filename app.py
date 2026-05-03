@@ -50,41 +50,49 @@ def guest_block():
     return render_template("guest.html")
 
 # ================= CART =================
-@app.route("/add_to_cart/<int:id>")
-def add_to_cart(id):
-    if is_guest():
-        return guest_block()
-
-    phone = session.get("phone")
-
-    supabase.table("cart").insert({
-        "product_id": id,
-        "phone": phone
-    }).execute()
-
-    return redirect("/cart")
-
 @app.route("/cart")
 def cart():
-    if is_guest():
-        return guest_block()
+    if session.get("user") == "Guest":
+        return render_template("guest.html")
 
     phone = session.get("phone")
 
-    cart_items = supabase.table("cart").select("*").eq("phone", phone).execute().data
+    cart_items = supabase.table("cart").select("*").eq("phone", phone).execute().data or []
 
     products = []
+
     for item in cart_items:
-        p = supabase.table("products").select("*").eq("id", item["product_id"]).execute().data
-        if p:
-            products.append(p[0])
+        try:
+            res = supabase.table("products") \
+                .select("*") \
+                .eq("id", item.get("product_id")) \
+                .execute() \
+                .data
+
+            # 🔥 SAFE CHECK (no crash ever)
+            if res and len(res) > 0:
+                products.append(res[0])
+
+        except:
+            # ignore broken item instead of crashing
+            continue
 
     return render_template("cart.html", products=products)
 
 @app.route("/remove_cart/<int:id>")
 def remove_cart(id):
-    phone = session.get("phone")
-    supabase.table("cart").delete().eq("product_id", id).eq("phone", phone).execute()
+    try:
+        phone = session.get("phone")
+
+        supabase.table("cart") \
+            .delete() \
+            .eq("product_id", id) \
+            .eq("phone", phone) \
+            .execute()
+
+    except:
+        pass
+
     return redirect("/cart")
 
 # ================= ORDER =================
