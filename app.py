@@ -1,7 +1,6 @@
 from flask import Flask, render_template, request, redirect, session
 from supabase import create_client
 import os
-import uuid
 from datetime import datetime
 
 app = Flask(__name__)
@@ -12,9 +11,7 @@ SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-ADMIN_PASS = "Tahmid1122"
-
-# ===== LOGIN =====
+# ================= LOGIN =================
 @app.route("/")
 def index():
     if "user" not in session:
@@ -33,81 +30,98 @@ def skip():
     session["phone"] = ""
     return redirect("/home")
 
-# ===== HOME =====
+# ================= HOME =================
 @app.route("/home")
 def home():
     products = supabase.table("products").select("*").execute().data
     return render_template("home.html", products=products)
 
-# ===== PRODUCT =====
+# ================= PRODUCT =================
 @app.route("/product/<int:id>")
 def product(id):
-    res = supabase.table("products").select("*").eq("id", id).execute().data
-    return render_template("product.html", p=res[0])
+    p = supabase.table("products").select("*").eq("id", id).execute().data[0]
+    return render_template("product.html", p=p)
 
-# ===== CART =====
+# ================= GUEST CHECK =================
+def is_guest():
+    return session.get("user") == "Guest"
+
+def guest_block():
+    return render_template("guest.html")
+
+# ================= CART =================
 @app.route("/add_to_cart/<int:id>")
 def add_to_cart(id):
-    cart = session.get("cart", [])
-    if id not in cart:
-        cart.append(id)
-    session["cart"] = cart
+    if is_guest():
+        return guest_block()
+
+    phone = session.get("phone")
+
+    supabase.table("cart").insert({
+        "product_id": id,
+        "phone": phone
+    }).execute()
+
     return redirect("/cart")
 
 @app.route("/cart")
 def cart():
-    cart_ids = session.get("cart", [])
+    if is_guest():
+        return guest_block()
+
+    phone = session.get("phone")
+
+    cart_items = supabase.table("cart").select("*").eq("phone", phone).execute().data
+
     products = []
-    for cid in cart_ids:
-        res = supabase.table("products").select("*").eq("id", cid).execute().data
-        if res:
-            products.append(res[0])
+    for item in cart_items:
+        p = supabase.table("products").select("*").eq("id", item["product_id"]).execute().data
+        if p:
+            products.append(p[0])
+
     return render_template("cart.html", products=products)
 
 @app.route("/remove_cart/<int:id>")
 def remove_cart(id):
-    cart = session.get("cart", [])
-    if id in cart:
-        cart.remove(id)
-    session["cart"] = cart
+    phone = session.get("phone")
+    supabase.table("cart").delete().eq("product_id", id).eq("phone", phone).execute()
     return redirect("/cart")
 
-# ===== ORDER =====
+# ================= ORDER =================
 @app.route("/order", methods=["POST"])
 def order():
-    try:
-        product_name = request.form.get("product_name")
+    if is_guest():
+        return guest_block()
 
-        # product image fetch
-        prod = supabase.table("products").select("*").eq("name", product_name).execute().data
-        image = prod[0]["image"] if prod else ""
+    phone = session.get("phone")
 
-        data = {
-            "product_name": product_name,
-            "quantity": request.form.get("quantity"),
-            "phone": request.form.get("phone"),
-            "district": request.form.get("district"),
-            "image": image,
-            "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
-            "status": "pending"
-        }
+    product_name = request.form.get("product_name")
 
-        if request.form.get("name"):
-            data["name"] = request.form.get("name")
+    prod = supabase.table("products").select("*").eq("name", product_name).execute().data
+    image = prod[0]["image"] if prod else ""
 
-        supabase.table("orders").insert(data).execute()
+    supabase.table("orders").insert({
+        "product_name": product_name,
+        "quantity": request.form.get("quantity"),
+        "phone": phone,
+        "image": image,
+        "date": datetime.now().strftime("%Y-%m-%d %H:%M")
+    }).execute()
 
-        return redirect("/orders")
-
-    except Exception as e:
-        return f"ORDER ERROR: {str(e)}"
+    return redirect("/orders")
 
 @app.route("/orders")
 def orders():
-    orders = supabase.table("orders").select("*").execute().data
+    if is_guest():
+        return guest_block()
+
+    phone = session.get("phone")
+
+    orders = supabase.table("orders").select("*").eq("phone", phone).execute().data
+
     return render_template("orders.html", orders=orders)
 
-# ===== ME =====
+# ================= ME =================
 @app.route("/me")
 def me():
     return render_template("me.html")
@@ -118,52 +132,6 @@ def update_profile():
     session["phone"] = request.form.get("phone")
     return redirect("/me")
 
-# ===== ADMIN =====
-@app.route("/admin", methods=["GET","POST"])
-def admin():
-    if request.method == "POST":
-        if request.form.get("password") == ADMIN_PASS:
-            session["admin"] = True
-
-    if not session.get("admin"):
-        return render_template("admin_login.html")
-
-    products = supabase.table("products").select("*").execute().data
-    return render_template("admin.html", products=products)
-
-# ===== ADD PRODUCT (FIXED UPLOAD) =====
-@app.route("/add_product", methods=["POST"])
-def add_product():
-    try:
-        file = request.files["image"]
-
-        filename = str(uuid.uuid4()) + "_" + file.filename
-        file_bytes = file.read()
-
-        supabase.storage.from_("products").upload(filename, file_bytes)
-
-        image_url = f"{SUPABASE_URL}/storage/v1/object/public/products/{filename}"
-
-        data = {
-            "name": request.form.get("name"),
-            "price": request.form.get("price"),
-            "description": request.form.get("description"),
-            "image": image_url
-        }
-
-        supabase.table("products").insert(data).execute()
-
-        return redirect("/admin")
-
-    except Exception as e:
-        return f"ADD ERROR: {str(e)}"
-
-# ===== DELETE =====
-@app.route("/delete/<int:id>")
-def delete(id):
-    supabase.table("products").delete().eq("id", id).execute()
-    return redirect("/admin")
-
-# ===== RUN =====
+# ================= RUN =================
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    app.run()
