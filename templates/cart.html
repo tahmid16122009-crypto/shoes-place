@@ -1,25 +1,26 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h2>Cart</h2>
+<h2>🛒 Cart</h2>
 
 {% if products %}
 {% for p in products %}
 <div class="card">
 <img src="{{p.image}}">
-<p>{{p.name}}</p>
+<h4>{{p.name}}</h4>
+<p>{{p.price}}৳</p>
 
 <a href="/product/{{p.id}}">
 <button>View</button>
 </a>
 
 <a href="/remove_cart/{{p.id}}">
-<button style="background:red;color:white">Remove</button>
+<button style="background:red">Remove</button>
 </a>
 </div>
 {% endfor %}
 {% else %}
-<p>No products added to cart yet.</p>
+<p>No products added yet.</p>
 {% endif %}
 
 {% endblock %}
