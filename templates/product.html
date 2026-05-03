@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 
-<img src="{{p.image}}" style="width:100%;border-radius:10px">
+<img src="{{p.image}}" style="width:100%;border-radius:14px">
 
 <h2>{{p.name}}</h2>
 <p>{{p.description}}</p>
@@ -13,16 +13,18 @@
 
 <hr>
 
+<h3>Order Now</h3>
+
 <form method="POST" action="/order">
 
 <input type="hidden" name="product_name" value="{{p.name}}">
 
 <input name="quantity" placeholder="Quantity" required>
 <input name="name" placeholder="Your Name" required>
-<input name="phone" placeholder="Phone" required>
+<input name="phone" placeholder="Phone Number" required>
 <input name="district" placeholder="District" required>
 
-<button>Order Now</button>
+<button>Place Order</button>
 
 </form>
 
